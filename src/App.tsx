@@ -1,34 +1,45 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom'
-import { useAuthStore } from '@/stores/auth'
+import { useState } from 'react'
+import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import LandingPage from '@/pages/LandingPage'
+import AppShell, { useTheme, type PageId } from '@/components/layout/AppShell'
+import DashboardPage from '@/pages/learner/DashboardPage'
+import MyCoursesPage from '@/pages/learner/MyCoursesPage'
+import CatalogPage from '@/pages/learner/CatalogPage'
+import PlaceholderPage from '@/pages/learner/PlaceholderPage'
 
-// Placeholder pages — replaced once mockup arrives
-const Home = () => <div className="p-8 text-2xl font-bold">BrilliaMind LMS</div>
 const Login = () => <div className="p-8">Login</div>
-const Dashboard = () => <div className="p-8">Dashboard</div>
-const Courses = () => <div className="p-8">Courses</div>
 const NotFound = () => <div className="p-8">404 Not Found</div>
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const user = useAuthStore((s) => s.user)
-  if (!user) return <Navigate to="/login" replace />
-  return <>{children}</>
+function LearnerApp() {
+  const [activePage, setActivePage] = useState<PageId>('dashboard')
+  const { variant } = useTheme('Deep Navy')
+
+  const renderPage = () => {
+    switch (activePage) {
+      case 'dashboard':    return <DashboardPage variant={variant} />
+      case 'courses':      return <MyCoursesPage />
+      case 'catalog':      return <CatalogPage />
+      case 'calendar':     return <PlaceholderPage page="calendar" />
+      case 'certificates': return <PlaceholderPage page="certificates" />
+      case 'settings':     return <PlaceholderPage page="settings" />
+      default:             return <PlaceholderPage page="dashboard" />
+    }
+  }
+
+  return (
+    <AppShell activePage={activePage} onNav={setActivePage} variant={variant}>
+      {renderPage()}
+    </AppShell>
+  )
 }
 
 export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Home />} />
+        <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
-        <Route
-          path="/dashboard"
-          element={
-            <ProtectedRoute>
-              <Dashboard />
-            </ProtectedRoute>
-          }
-        />
-        <Route path="/courses" element={<Courses />} />
+        <Route path="/dashboard" element={<LearnerApp />} />
         <Route path="/verify/:certUuid" element={<div className="p-8">Certificate Verify</div>} />
         <Route path="*" element={<NotFound />} />
       </Routes>
