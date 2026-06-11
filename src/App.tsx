@@ -6,6 +6,7 @@ import DashboardPage from '@/pages/learner/DashboardPage'
 import MyCoursesPage from '@/pages/learner/MyCoursesPage'
 import CatalogPage from '@/pages/learner/CatalogPage'
 import PlaceholderPage from '@/pages/learner/PlaceholderPage'
+import OnboardingPage from '@/pages/OnboardingPage'
 
 const Login = () => <div className="p-8">Login</div>
 const NotFound = () => <div className="p-8">404 Not Found</div>
@@ -39,6 +40,7 @@ export default function App() {
       <Routes>
         <Route path="/" element={<LandingPage />} />
         <Route path="/login" element={<Login />} />
+        <Route path="/onboarding" element={<OnboardingPage />} />
         <Route path="/dashboard" element={<LearnerApp />} />
         <Route path="/verify/:certUuid" element={<div className="p-8">Certificate Verify</div>} />
         <Route path="*" element={<NotFound />} />
