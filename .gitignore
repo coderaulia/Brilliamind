@@ -1,12 +1,19 @@
 # Dependencies
 node_modules/
+.pnpm-store/
 .pnp
 .pnp.js
 
-# Build
+# Build output
 dist/
 dist-ssr/
+.next/
+out/
 *.local
+
+# Keep the lockfile checked into Git!
+!pnpm-lock.yaml
+
 
 # Environment — never commit secrets
 .env
