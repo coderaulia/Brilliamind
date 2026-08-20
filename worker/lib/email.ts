@@ -17,14 +17,9 @@ export async function sendEmail({
   from = 'noreply@brilliamind.id',
   senderName = 'BrilliaMind LMS',
 }: SendEmailOptions): Promise<boolean> {
-  // Local development fallback: log email to console if no API key is provided
+  // Local development fallback: log sanitized email summary if no API key is provided
   if (!apiKey || apiKey.startsWith('xkeysib_test_dummy') || apiKey.startsWith('re_test_dummy')) {
-    console.log(`\n================= [BREVO DEV EMAIL DISPATCH] =================`)
-    console.log(`To: ${toName ? `${toName} <${to}>` : to}`)
-    console.log(`From: ${senderName} <${from}>`)
-    console.log(`Subject: ${subject}`)
-    console.log(`Body (HTML):\n${html}`)
-    console.log(`==============================================================\n`)
+    console.log(`[BREVO DEV EMAIL] Simulated dispatch to ${toName ? `${toName} <${to}>` : to} | Subject: "${subject}"`)
     return true
   }
 

@@ -7,6 +7,13 @@ import { hashPassword, generateUuid } from '../lib/crypto'
 const seedRouter = new Hono<{ Bindings: Env; Variables: Variables }>()
 
 seedRouter.post('/', async (c) => {
+  // Security guard: Disable database seeding in production environments
+  const appUrl = c.env.APP_URL || ''
+  const isDev = appUrl.includes('localhost') || appUrl.includes('127.0.0.1') || !appUrl
+  if (!isDev) {
+    return c.json({ error: 'Forbidden: Database seeding is disabled in production environments' }, 403)
+  }
+
   const db = getDb(c.env.DB)
 
   // 1. Seed Superadmin
@@ -157,12 +164,7 @@ seedRouter.post('/', async (c) => {
 
   return c.json({
     message: 'Database seeded successfully with demo users and course!',
-    credentials: {
-      superadmin: { email: 'admin@brilliamind.id', password: 'Admin123!' },
-      activeInstructor: { email: 'sarah.mitchell@brilliamind.id', password: 'Instructor123!' },
-      pendingInstructor: { email: 'alex.tan@brilliamind.id', password: 'Instructor123!' },
-      learner: { email: 'budi.santoso@brilliamind.id', password: 'Learner123!' },
-    },
+    seededRoles: ['admin', 'instructor', 'learner'],
   })
 })
 

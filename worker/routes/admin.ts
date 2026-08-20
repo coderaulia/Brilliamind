@@ -167,7 +167,7 @@ admin.post('/users/:id/reset-password', async (c) => {
     from: c.env.EMAIL_FROM,
   })
 
-  return c.json({ message: 'Password reset link dispatched to user email', resetUrl })
+  return c.json({ message: 'Password reset link dispatched to user email' })
 })
 
 function escapeCsvCell(val: string | number | null | undefined): string {

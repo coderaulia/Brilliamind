@@ -204,10 +204,17 @@ coursesRouter.post('/:id/sections', authMiddleware, requireRole('instructor', 'a
 coursesRouter.post('/sections/:sectionId/lessons', authMiddleware, requireRole('instructor', 'admin'), zValidator('json', lessonSchema), async (c) => {
   const sectionId = c.req.param('sectionId') as string
   const data = c.req.valid('json')
+  const user = c.get('user')
   const db = getDb(c.env.DB)
 
   const section = await db.select().from(sections).where(eq(sections.id, sectionId)).get()
   if (!section) return c.json({ error: 'Section not found' }, 404)
+
+  const course = await db.select().from(courses).where(eq(courses.id, section.courseId)).get()
+  if (!course) return c.json({ error: 'Course not found' }, 404)
+  if (user.role !== 'admin' && course.instructorId !== user.id) {
+    return c.json({ error: 'Forbidden: you do not own this course' }, 403)
+  }
 
   const id = generateUuid()
   await db.insert(lessons).values({
@@ -229,10 +236,18 @@ coursesRouter.post('/sections/:sectionId/lessons', authMiddleware, requireRole('
 coursesRouter.put('/lessons/:id', authMiddleware, requireRole('instructor', 'admin'), zValidator('json', lessonSchema.partial()), async (c) => {
   const lessonId = c.req.param('id') as string
   const data = c.req.valid('json')
+  const user = c.get('user')
   const db = getDb(c.env.DB)
 
   const lesson = await db.select().from(lessons).where(eq(lessons.id, lessonId)).get()
   if (!lesson) return c.json({ error: 'Lesson not found' }, 404)
+
+  const section = await db.select().from(sections).where(eq(sections.id, lesson.sectionId)).get()
+  const course = section ? await db.select().from(courses).where(eq(courses.id, section.courseId)).get() : null
+  if (!course) return c.json({ error: 'Course not found' }, 404)
+  if (user.role !== 'admin' && course.instructorId !== user.id) {
+    return c.json({ error: 'Forbidden: you do not own this course' }, 403)
+  }
 
   await db.update(lessons).set(data).where(eq(lessons.id, lessonId))
   return c.json({ message: 'Lesson updated successfully' })
@@ -241,7 +256,18 @@ coursesRouter.put('/lessons/:id', authMiddleware, requireRole('instructor', 'adm
 // 9. Instructor: Delete Lesson
 coursesRouter.delete('/lessons/:id', authMiddleware, requireRole('instructor', 'admin'), async (c) => {
   const lessonId = c.req.param('id') as string
+  const user = c.get('user')
   const db = getDb(c.env.DB)
+
+  const lesson = await db.select().from(lessons).where(eq(lessons.id, lessonId)).get()
+  if (!lesson) return c.json({ error: 'Lesson not found' }, 404)
+
+  const section = await db.select().from(sections).where(eq(sections.id, lesson.sectionId)).get()
+  const course = section ? await db.select().from(courses).where(eq(courses.id, section.courseId)).get() : null
+  if (!course) return c.json({ error: 'Course not found' }, 404)
+  if (user.role !== 'admin' && course.instructorId !== user.id) {
+    return c.json({ error: 'Forbidden: you do not own this course' }, 403)
+  }
 
   await db.delete(lessons).where(eq(lessons.id, lessonId))
   return c.json({ message: 'Lesson deleted successfully' })

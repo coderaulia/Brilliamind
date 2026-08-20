@@ -119,9 +119,9 @@ export default function AdminDashboardPage() {
 
   const handleTriggerResetPassword = async (userId: string, email: string) => {
     try {
-      const res = await api.post<{ message: string; resetUrl?: string }>(`/api/admin/users/${userId}/reset-password`)
+      await api.post<{ message: string }>(`/api/admin/users/${userId}/reset-password`)
       setMessage({
-        text: `Password reset dispatched to ${email}! ${res.resetUrl ? `(Link: ${res.resetUrl})` : ''}`,
+        text: `Secure password reset link successfully dispatched to ${email}`,
         type: 'success',
       })
     } catch (err: unknown) {

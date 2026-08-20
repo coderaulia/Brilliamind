@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
+import DOMPurify from 'dompurify'
 import {
   CATALOG_COURSES, MOCK_DISCUSSIONS,
   type Lesson, type CourseModule, type DiscussionComment, type LearnerNote
@@ -395,12 +396,14 @@ export default function CoursePlayerPage({ courseId, onBack }: CoursePlayerPageP
                   <div
                     style={{ fontSize: 15, lineHeight: 1.7, color: 'var(--text-secondary)' }}
                     dangerouslySetInnerHTML={{
-                      __html: (currentLesson.articleContent || '')
-                        .replace(/\n\n/g, '<br/><br/>')
-                        .replace(/### (.*?)\n/g, '<h3 style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 24px 0 12px;">$1</h3>')
-                        .replace(/#### (.*?)\n/g, '<h4 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 18px 0 8px;">$1</h4>')
-                        .replace(/\*\*(.*?)\*\*/g, '<strong style="color: var(--text-primary);">$1</strong>')
-                        .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                      __html: DOMPurify.sanitize(
+                        (currentLesson.articleContent || '')
+                          .replace(/\n\n/g, '<br/><br/>')
+                          .replace(/### (.*?)\n/g, '<h3 style="font-size: 20px; font-weight: 700; color: var(--text-primary); margin: 24px 0 12px;">$1</h3>')
+                          .replace(/#### (.*?)\n/g, '<h4 style="font-size: 16px; font-weight: 700; color: var(--text-primary); margin: 18px 0 8px;">$1</h4>')
+                          .replace(/\*\*(.*?)\*\*/g, '<strong style="color: var(--text-primary);">$1</strong>')
+                          .replace(/\*(.*?)\*/g, '<em>$1</em>')
+                      )
                     }}
                   />
                 </div>

@@ -109,4 +109,38 @@ describe('Cloudflare Workers Hono API Integration', () => {
     expect(json.success).toBe(true)
     expect(json.eventId).toBeDefined()
   })
+
+  describe('Security & Hardening Safeguards', () => {
+    it('blocks /api/seed in production environments (OWASP A01/A05)', async () => {
+      const prodEnv = {
+        ...mockEnv,
+        APP_URL: 'https://brilliamind.id',
+      }
+      const req = new Request('http://localhost/api/seed', { method: 'POST' })
+      const res = await app.fetch(req, prodEnv)
+
+      expect(res.status).toBe(403)
+      const json = await res.json() as { error: string }
+      expect(json.error).toContain('disabled in production')
+    })
+
+    it('does not expose plaintext password credentials in /api/seed response in dev', async () => {
+      const req = new Request('http://localhost/api/seed', { method: 'POST' })
+      const res = await app.fetch(req, mockEnv)
+
+      expect(res.status).toBe(200)
+      const json = await res.json() as Record<string, any>
+      expect(json.credentials).toBeUndefined()
+    })
+
+    it('does not authenticate requests via ambient cookies (CSRF mitigation)', async () => {
+      const req = new Request('http://localhost/api/progress/dashboard', {
+        headers: {
+          'Cookie': 'auth_token=some_injected_cookie_token',
+        },
+      })
+      const res = await app.fetch(req, mockEnv)
+      expect(res.status).toBe(401)
+    })
+  })
 })

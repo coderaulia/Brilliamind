@@ -8,13 +8,6 @@ export async function authMiddleware(c: Context<{ Bindings: Env; Variables: Vari
 
   if (authHeader && authHeader.startsWith('Bearer ')) {
     token = authHeader.substring(7).trim()
-  } else {
-    // Check cookie
-    const cookieHeader = c.req.header('Cookie')
-    if (cookieHeader) {
-      const match = cookieHeader.match(/auth_token=([^;]+)/)
-      if (match) token = match[1]
-    }
   }
 
   if (!token) {
