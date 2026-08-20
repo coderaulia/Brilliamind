@@ -162,7 +162,7 @@ auth.post('/accept-invite', rateLimit(5, 60), zValidator('json', acceptInviteSch
   }
 
   // Check if profile already exists
-  let existingUser = await db.select().from(profiles).where(eq(profiles.email, invitation.email.toLowerCase())).get()
+  const existingUser = await db.select().from(profiles).where(eq(profiles.email, invitation.email.toLowerCase())).get()
   const passwordHash = await hashPassword(password)
   let userId: string
 

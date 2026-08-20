@@ -43,7 +43,7 @@ admin.get('/instructors', async (c) => {
 
 // 2. Approve Pending Instructor
 admin.post('/instructors/:id/approve', async (c) => {
-  const instructorId = c.req.param('id')
+  const instructorId = c.req.param('id') as string
   const db = getDb(c.env.DB)
 
   const instructor = await db.select().from(profiles).where(eq(profiles.id, instructorId)).get()
@@ -67,7 +67,7 @@ admin.post('/instructors/:id/approve', async (c) => {
 
 // 3. Reject / Suspend Instructor
 admin.post('/instructors/:id/reject', async (c) => {
-  const instructorId = c.req.param('id')
+  const instructorId = c.req.param('id') as string
   const db = getDb(c.env.DB)
 
   const instructor = await db.select().from(profiles).where(eq(profiles.id, instructorId)).get()
@@ -138,7 +138,7 @@ admin.post('/invite-user', zValidator('json', inviteUserSchema), async (c) => {
 
 // 6. Superadmin Trigger Password Reset For User
 admin.post('/users/:id/reset-password', async (c) => {
-  const userId = c.req.param('id')
+  const userId = c.req.param('id') as string
   const db = getDb(c.env.DB)
 
   const user = await db.select().from(profiles).where(eq(profiles.id, userId)).get()

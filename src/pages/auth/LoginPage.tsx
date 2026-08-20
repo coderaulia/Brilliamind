@@ -31,7 +31,7 @@ export default function LoginPage() {
         navigate('/dashboard')
       }
     } catch (err: unknown) {
-      if (err instanceof ApiError && (err.data as any)?.status === 'pending') {
+      if (err instanceof ApiError && (err.data as { status?: string } | null)?.status === 'pending') {
         setPendingNotice(err.message)
       } else if (err instanceof Error) {
         setError(err.message)

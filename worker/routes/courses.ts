@@ -84,7 +84,7 @@ coursesRouter.get('/instructor/my-courses', authMiddleware, requireRole('instruc
 
 // 3. Get Single Course with Sections & Lessons
 coursesRouter.get('/:id', optionalAuthMiddleware, async (c) => {
-  const courseId = c.req.param('id')
+  const courseId = c.req.param('id') as string
   const db = getDb(c.env.DB)
 
   const course = await db.select({
@@ -167,7 +167,7 @@ coursesRouter.post('/', authMiddleware, requireRole('instructor', 'admin'), zVal
 
 // 5. Instructor: Update Course
 coursesRouter.put('/:id', authMiddleware, requireRole('instructor', 'admin'), zValidator('json', courseSchema.partial()), async (c) => {
-  const courseId = c.req.param('id')
+  const courseId = c.req.param('id') as string
   const data = c.req.valid('json')
   const user = c.get('user')
   const db = getDb(c.env.DB)
@@ -184,7 +184,7 @@ coursesRouter.put('/:id', authMiddleware, requireRole('instructor', 'admin'), zV
 
 // 6. Instructor: Add Section
 coursesRouter.post('/:id/sections', authMiddleware, requireRole('instructor', 'admin'), zValidator('json', sectionSchema), async (c) => {
-  const courseId = c.req.param('id')
+  const courseId = c.req.param('id') as string
   const { title, position } = c.req.valid('json')
   const user = c.get('user')
   const db = getDb(c.env.DB)
@@ -202,7 +202,7 @@ coursesRouter.post('/:id/sections', authMiddleware, requireRole('instructor', 'a
 
 // 7. Instructor: Add Lesson to Section (YouTube / Video)
 coursesRouter.post('/sections/:sectionId/lessons', authMiddleware, requireRole('instructor', 'admin'), zValidator('json', lessonSchema), async (c) => {
-  const sectionId = c.req.param('sectionId')
+  const sectionId = c.req.param('sectionId') as string
   const data = c.req.valid('json')
   const db = getDb(c.env.DB)
 
@@ -227,7 +227,7 @@ coursesRouter.post('/sections/:sectionId/lessons', authMiddleware, requireRole('
 
 // 8. Instructor: Update Lesson
 coursesRouter.put('/lessons/:id', authMiddleware, requireRole('instructor', 'admin'), zValidator('json', lessonSchema.partial()), async (c) => {
-  const lessonId = c.req.param('id')
+  const lessonId = c.req.param('id') as string
   const data = c.req.valid('json')
   const db = getDb(c.env.DB)
 
@@ -240,7 +240,7 @@ coursesRouter.put('/lessons/:id', authMiddleware, requireRole('instructor', 'adm
 
 // 9. Instructor: Delete Lesson
 coursesRouter.delete('/lessons/:id', authMiddleware, requireRole('instructor', 'admin'), async (c) => {
-  const lessonId = c.req.param('id')
+  const lessonId = c.req.param('id') as string
   const db = getDb(c.env.DB)
 
   await db.delete(lessons).where(eq(lessons.id, lessonId))
@@ -249,7 +249,7 @@ coursesRouter.delete('/lessons/:id', authMiddleware, requireRole('instructor', '
 
 // 10. Instructor: Invite Learner to Course
 coursesRouter.post('/:id/invite-learner', authMiddleware, requireRole('instructor', 'admin'), zValidator('json', inviteLearnerSchema), async (c) => {
-  const courseId = c.req.param('id')
+  const courseId = c.req.param('id') as string
   const { email } = c.req.valid('json')
   const user = c.get('user')
   const db = getDb(c.env.DB)
@@ -294,7 +294,7 @@ coursesRouter.post('/:id/invite-learner', authMiddleware, requireRole('instructo
 
 // 11. Instructor: Get Learner Progress Roster for Course
 coursesRouter.get('/:id/learners', authMiddleware, requireRole('instructor', 'admin'), async (c) => {
-  const courseId = c.req.param('id')
+  const courseId = c.req.param('id') as string
   const user = c.get('user')
   const db = getDb(c.env.DB)
 

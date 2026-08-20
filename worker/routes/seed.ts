@@ -55,7 +55,7 @@ seedRouter.post('/', async (c) => {
 
   // 3. Seed Pending Instructor (for testing approval flow)
   const pendingEmail = 'alex.tan@brilliamind.id'
-  let pendingInst = await db.select().from(profiles).where(eq(profiles.email, pendingEmail)).get()
+  const pendingInst = await db.select().from(profiles).where(eq(profiles.email, pendingEmail)).get()
   if (!pendingInst) {
     await db.insert(profiles).values({
       id: 'usr-inst-002',

@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Link } from 'react-router-dom'
 import { api } from '@/lib/api'
-import { Sparkles, ArrowRight, AlertCircle, CheckCircle2, KeyRound } from 'lucide-react'
+import { Sparkles, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react'
 
 export default function ForgotPasswordPage() {
   const [email, setEmail] = useState('')

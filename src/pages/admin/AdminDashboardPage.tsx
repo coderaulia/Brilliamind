@@ -1,21 +1,15 @@
 import { useState, useEffect } from 'react'
-import { Link } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { useAuthStore } from '@/stores/auth'
 import {
   ShieldCheck,
   UserCheck,
   Users,
-  Mail,
   CheckCircle2,
   XCircle,
   Clock,
   Send,
   RotateCcw,
-  Sparkles,
-  Search,
-  BookOpen,
-  ChevronRight,
   LogOut,
 } from 'lucide-react'
 
@@ -170,6 +164,12 @@ export default function AdminDashboardPage() {
 
       {/* Main Content Area */}
       <main className="flex-1 max-w-7xl w-full mx-auto p-6 md:p-8 space-y-6">
+        {isLoading && (
+          <div className="flex items-center justify-center p-8 text-slate-400">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-indigo-500" />
+          </div>
+        )}
+
         {message && (
           <div className={`p-4 rounded-xl text-sm flex items-center gap-3 ${
             message.type === 'success'

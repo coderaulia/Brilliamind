@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useSearchParams, Link } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth'
-import { Sparkles, ArrowRight, AlertCircle, CheckCircle2, UserCheck } from 'lucide-react'
+import { Sparkles, ArrowRight, AlertCircle, UserCheck } from 'lucide-react'
 
 export default function AcceptInvitePage() {
   const navigate = useNavigate()

@@ -63,7 +63,7 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
     headers: reqHeaders,
   })
 
-  let data: any
+  let data: unknown
   const contentType = response.headers.get('content-type')
   if (contentType && contentType.includes('application/json')) {
     data = await response.json()
@@ -72,7 +72,8 @@ async function request<T>(endpoint: string, options: RequestOptions = {}): Promi
   }
 
   if (!response.ok) {
-    const errorMessage = (typeof data === 'object' && data?.error) || data?.message || response.statusText
+    const errorObj = data as { error?: string; message?: string } | null
+    const errorMessage = errorObj?.error || errorObj?.message || response.statusText
     throw new ApiError(errorMessage, response.status, data)
   }
 

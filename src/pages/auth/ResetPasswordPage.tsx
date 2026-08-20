@@ -1,10 +1,9 @@
 import { useState, useEffect } from 'react'
-import { useNavigate, useSearchParams, Link } from 'react-router-dom'
+import { useSearchParams, Link } from 'react-router-dom'
 import { api } from '@/lib/api'
 import { Sparkles, ArrowRight, AlertCircle, CheckCircle2 } from 'lucide-react'
 
 export default function ResetPasswordPage() {
-  const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const token = searchParams.get('token') || ''
 

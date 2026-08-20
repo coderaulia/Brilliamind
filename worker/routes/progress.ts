@@ -104,7 +104,7 @@ progressRouter.get('/dashboard', async (c) => {
 
 // 2. Get Lesson Completion Checklist for a Course
 progressRouter.get('/course/:courseId', async (c) => {
-  const courseId = c.req.param('courseId')
+  const courseId = c.req.param('courseId') as string
   const user = c.get('user')
   const db = getDb(c.env.DB)
 
