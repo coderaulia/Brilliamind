@@ -81,6 +81,8 @@ export const enrollments = sqliteTable('enrollments', {
   courseId: text('course_id').notNull().references(() => courses.id, { onDelete: 'cascade' }),
   enrolledAt: text('enrolled_at').notNull().default(sql`(CURRENT_TIMESTAMP)`),
   completedAt: text('completed_at'),
+  milestone50SentAt: text('milestone_50_sent_at'),
+  milestone100SentAt: text('milestone_100_sent_at'),
 })
 
 // 8. User Progress Table
@@ -164,3 +166,19 @@ export const mediaFiles = sqliteTable('media_files', {
   mime: text('mime').notNull(),
   createdAt: text('created_at').notNull().default(sql`(CURRENT_TIMESTAMP)`),
 })
+
+// 16. Analytics Events Table (Cloudflare-native telemetry)
+export const analyticsEvents = sqliteTable('analytics_events', {
+  id: text('id').primaryKey(),
+  eventType: text('event_type').notNull(),
+  userId: text('user_id'),
+  anonymousId: text('anonymous_id'),
+  courseId: text('course_id'),
+  lessonId: text('lesson_id'),
+  path: text('path'),
+  referrer: text('referrer'),
+  ipCountry: text('ip_country'),
+  propertiesJson: text('properties_json', { mode: 'json' }).$type<Record<string, unknown>>(),
+  createdAt: text('created_at').notNull().default(sql`(CURRENT_TIMESTAMP)`),
+})
+

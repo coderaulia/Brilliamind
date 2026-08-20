@@ -6,6 +6,7 @@ import admin from './routes/admin'
 import coursesRouter from './routes/courses'
 import progressRouter from './routes/progress'
 import seedRouter from './routes/seed'
+import analyticsRouter from './routes/analytics'
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>()
 
@@ -55,6 +56,7 @@ app.route('/api/auth', auth)
 app.route('/api/admin', admin)
 app.route('/api/courses', coursesRouter)
 app.route('/api/progress', progressRouter)
+app.route('/api/analytics', analyticsRouter)
 app.route('/api/seed', seedRouter)
 
 export default app

@@ -7,7 +7,7 @@ import { getDb, courses, sections, lessons, profiles, enrollments, userProgress,
 import { authMiddleware, optionalAuthMiddleware } from '../middleware/auth'
 import { requireRole } from '../middleware/role'
 import { generateUuid, generateSecureToken } from '../lib/crypto'
-import { sendEmail } from '../lib/resend'
+import { sendEmail } from '../lib/email'
 
 const coursesRouter = new Hono<{ Bindings: Env; Variables: Variables }>()
 
@@ -282,7 +282,7 @@ coursesRouter.post('/:id/invite-learner', authMiddleware, requireRole('instructo
     to: email,
     subject: `You have been invited to the course: "${course.title}" on BrilliaMind LMS`,
     html: `<p>Hello,</p><p>Instructor ${user.name} has invited you to join the course <strong>"${course.title}"</strong>.</p><p>Click the link below to accept the invitation, set your password, and start learning:</p><p><a href="${inviteUrl}">${inviteUrl}</a></p>`,
-    apiKey: c.env.RESEND_API_KEY,
+    apiKey: c.env.BREVO_API_KEY,
     from: c.env.EMAIL_FROM,
   })
 
@@ -365,6 +365,100 @@ coursesRouter.get('/:id/learners', authMiddleware, requireRole('instructor', 'ad
   return c.json({
     course: { id: course.id, title: course.title, totalLessons },
     learners: roster,
+  })
+})
+
+function escapeCsvCell(val: string | number | null | undefined): string {
+  if (val === null || val === undefined) return '""'
+  let str = String(val)
+  // Prevent CSV Formula Injection in Excel/Google Sheets
+  if (/^[=+\-@\t\r]/.test(str)) {
+    str = `'${str}`
+  }
+  return `"${str.replace(/"/g, '""')}"`
+}
+
+// 12. Export Course Roster as CSV (for HR & Instructors)
+coursesRouter.get('/:id/export-csv', authMiddleware, requireRole('instructor'), async (c) => {
+  const courseId = c.req.param('id') as string
+  const user = c.get('user')
+  const db = getDb(c.env.DB)
+
+  const course = await db.select().from(courses).where(eq(courses.id, courseId)).get()
+  if (!course) {
+    return c.text('Course not found', 404)
+  }
+
+  if (user.role !== 'admin' && course.instructorId !== user.id) {
+    return c.text('Unauthorized: You can only export roster for your own courses', 403)
+  }
+
+  // Get all lessons for this course
+  const courseSections = await db.select().from(sections).where(eq(sections.courseId, courseId)).all()
+  const secIds = courseSections.map(s => s.id)
+  let courseLessonIds: string[] = []
+  if (secIds.length > 0) {
+    const allCourseLessons = await db.select().from(lessons).where(sql`${lessons.sectionId} IN ${secIds}`).all()
+    courseLessonIds = allCourseLessons.map(l => l.id)
+  }
+  const totalLessons = courseLessonIds.length
+
+  const enrolledUsers = await db.select({
+    userId: enrollments.userId,
+    name: profiles.name,
+    email: profiles.email,
+    enrolledAt: enrollments.enrolledAt,
+    completedAt: enrollments.completedAt,
+  })
+  .from(enrollments)
+  .innerJoin(profiles, eq(enrollments.userId, profiles.id))
+  .where(eq(enrollments.courseId, courseId))
+  .all()
+
+  const csvRows: string[] = [
+    ['Student Name', 'Email Address', 'Enrolled Date', 'Completed Lessons', 'Total Lessons', 'Progress %', 'Status', 'Completion Date']
+      .map(h => `"${h}"`).join(','),
+  ]
+
+  for (const u of enrolledUsers) {
+    let completedLessons = 0
+    if (courseLessonIds.length > 0) {
+      const userCompletedProgress = await db.select()
+        .from(userProgress)
+        .where(
+          and(
+            eq(userProgress.userId, u.userId),
+            eq(userProgress.completed, true),
+            sql`${userProgress.lessonId} IN ${courseLessonIds}`
+          )
+        )
+        .all()
+      completedLessons = userCompletedProgress.length
+    }
+    const progressPct = totalLessons > 0 ? Math.round((completedLessons / totalLessons) * 100) : 0
+    const status = progressPct >= 100 ? 'Completed' : progressPct > 0 ? 'In Progress' : 'Not Started'
+
+    csvRows.push([
+      escapeCsvCell(u.name),
+      escapeCsvCell(u.email),
+      escapeCsvCell(u.enrolledAt ? u.enrolledAt.slice(0, 10) : ''),
+      escapeCsvCell(completedLessons),
+      escapeCsvCell(totalLessons),
+      escapeCsvCell(`${progressPct}%`),
+      escapeCsvCell(status),
+      escapeCsvCell(u.completedAt ? u.completedAt.slice(0, 10) : ''),
+    ].join(','))
+  }
+
+  const csvContent = csvRows.join('\r\n')
+  const filename = `course-${course.slug || course.id}-roster.csv`
+
+  return new Response(csvContent, {
+    headers: {
+      'Content-Type': 'text/csv; charset=utf-8',
+      'Content-Disposition': `attachment; filename="${filename}"`,
+      'Cache-Control': 'no-cache',
+    },
   })
 })
 

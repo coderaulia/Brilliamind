@@ -6,6 +6,7 @@ import type { Env, Variables } from '../types'
 import { getDb, courses, sections, lessons, enrollments, userProgress, videoWatchLogs, profiles } from '../db'
 import { authMiddleware } from '../middleware/auth'
 import { generateUuid } from '../lib/crypto'
+import { sendEmail } from '../lib/email'
 
 const progressRouter = new Hono<{ Bindings: Env; Variables: Variables }>()
 
@@ -183,7 +184,7 @@ progressRouter.post('/lesson', zValidator('json', toggleLessonSchema), async (c)
     })
   }
 
-  // Check if course is now 100% complete
+  // Check and trigger milestones (50% and 100%)
   if (courseId && completed) {
     const courseSections = await db.select().from(sections).where(eq(sections.courseId, courseId)).all()
     const secIds = courseSections.map(s => s.id)
@@ -202,11 +203,76 @@ progressRouter.post('/lesson', zValidator('json', toggleLessonSchema), async (c)
         )
         .all()
 
-      if (userDone.length >= allLessons.length && allLessons.length > 0) {
-        // Mark enrollment completed
-        await db.update(enrollments).set({
-          completedAt: new Date().toISOString(),
-        }).where(and(eq(enrollments.userId, user.id), eq(enrollments.courseId, courseId)))
+      const completedCount = userDone.length
+      const totalLessons = allLessons.length
+      const progressPct = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0
+
+      const enrollment = await db.select().from(enrollments)
+        .where(and(eq(enrollments.userId, user.id), eq(enrollments.courseId, courseId)))
+        .get()
+
+      if (enrollment) {
+        const targetCourse = await db.select().from(courses).where(eq(courses.id, courseId)).get()
+        const courseTitle = targetCourse?.title || 'Your Course'
+        const appUrl = c.env.APP_URL || 'http://localhost:5173'
+
+        // 1. 50% Halfway Milestone Email Trigger
+        if (progressPct >= 50 && !enrollment.milestone50SentAt) {
+          const nowStr = new Date().toISOString()
+          await db.update(enrollments).set({ milestone50SentAt: nowStr }).where(eq(enrollments.id, enrollment.id))
+
+          await sendEmail({
+            to: user.email,
+            toName: user.name,
+            subject: `🔥 Halfway there! You're 50% through "${courseTitle}"`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b;">
+                <h2 style="color: #4f46e5;">🔥 Fantastic Progress, ${user.name}!</h2>
+                <p>You have officially crossed the <strong>50% milestone</strong> in <strong>"${courseTitle}"</strong> (${completedCount} of ${totalLessons} lessons completed).</p>
+                <p>Keep the momentum going and finish strong to earn your verified certificate of completion!</p>
+                <div style="margin: 24px 0;">
+                  <a href="${appUrl}/learn/${courseId}" style="background: #4f46e5; color: #ffffff; padding: 12px 24px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Resume Next Lesson →</a>
+                </div>
+                <p style="color: #64748b; font-size: 13px;">— The BrilliaMind LMS Team</p>
+              </div>
+            `,
+            apiKey: c.env.BREVO_API_KEY,
+            from: c.env.EMAIL_FROM,
+          })
+        }
+
+        // 2. 100% Course Completion Milestone Email Trigger
+        if (progressPct >= 100 && !enrollment.milestone100SentAt) {
+          const nowStr = new Date().toISOString()
+          await db.update(enrollments).set({
+            completedAt: nowStr,
+            milestone100SentAt: nowStr,
+          }).where(eq(enrollments.id, enrollment.id))
+
+          const certUuid = `bm-cert-${targetCourse?.slug || courseId}-${user.id.slice(0, 6)}`
+          const verifyUrl = `${appUrl}/verify/${certUuid}`
+          const linkedinAddUrl = `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(courseTitle)}&organizationName=BrilliaMind&certUrl=${encodeURIComponent(verifyUrl)}`
+
+          await sendEmail({
+            to: user.email,
+            toName: user.name,
+            subject: `🎓 Congratulations! You've graduated from "${courseTitle}"`,
+            html: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; color: #1e293b;">
+                <h2 style="color: #10b981;">🎓 Congratulations, ${user.name}!</h2>
+                <p>You have completed 100% of <strong>"${courseTitle}"</strong>!</p>
+                <p>Your verified graduation certificate is ready. You can download it or share it directly to your LinkedIn profile.</p>
+                <div style="margin: 24px 0; display: flex; gap: 12px;">
+                  <a href="${verifyUrl}" style="background: #10b981; color: #ffffff; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block; margin-right: 12px;">View Verified Certificate</a>
+                  <a href="${linkedinAddUrl}" style="background: #0a66c2; color: #ffffff; padding: 12px 20px; border-radius: 8px; text-decoration: none; font-weight: bold; display: inline-block;">Add to LinkedIn Profile</a>
+                </div>
+                <p style="color: #64748b; font-size: 13px;">— The BrilliaMind LMS Team</p>
+              </div>
+            `,
+            apiKey: c.env.BREVO_API_KEY,
+            from: c.env.EMAIL_FROM,
+          })
+        }
       }
     }
   }

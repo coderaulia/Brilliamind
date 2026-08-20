@@ -7,7 +7,7 @@ import { getDb, profiles, invitations, passwordResetTokens, enrollments } from '
 import { hashPassword, verifyPassword, signJwt, generateUuid, generateSecureToken } from '../lib/crypto'
 import { authMiddleware } from '../middleware/auth'
 import { rateLimit } from '../middleware/rate-limit'
-import { sendEmail } from '../lib/resend'
+import { sendEmail } from '../lib/email'
 
 const auth = new Hono<{ Bindings: Env; Variables: Variables }>()
 
@@ -255,7 +255,7 @@ auth.post('/forgot-password', rateLimit(3, 60), zValidator('json', forgotPasswor
       to: user.email,
       subject: 'Reset Your BrilliaMind LMS Password',
       html: `<p>Hello ${user.name},</p><p>You requested a password reset. Click the link below to set a new password:</p><p><a href="${resetUrl}">${resetUrl}</a></p><p>This link expires in 2 hours.</p>`,
-      apiKey: c.env.RESEND_API_KEY,
+      apiKey: c.env.BREVO_API_KEY,
       from: c.env.EMAIL_FROM,
     })
   }

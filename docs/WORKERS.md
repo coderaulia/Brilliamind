@@ -20,22 +20,21 @@ worker/
 │   ├── r2.ts              # /api/r2 (presigned upload URLs, media metadata)
 │   ├── stripe.ts          # /api/stripe (checkout session, webhook handler)
 │   ├── quiz.ts            # /api/quiz (verify submission, attempt history)
-│   ├── progress.ts        # /api/progress (lesson completion, video watch logs)
-│   ├── certificates.ts    # /api/certificates (issuance, public verification)
-│   ├── discussions.ts     # /api/discussions (lesson thread CRUD)
-│   └── email.ts           # /api/email (transactional Resend dispatch)
+│   ├── progress.ts        # /api/progress (lesson completion, milestones, video watch logs)
+│   ├── analytics.ts       # /api/analytics (edge telemetry ingestion, funnel overview)
+│   ├── seed.ts            # /api/seed (local demo database seed)
+│   └── certificates.ts    # /api/certificates (issuance, public verification)
 ├── middleware/
 │   ├── auth.ts            # JWT verification & context extraction (c.set('user', ...))
 │   ├── role.ts            # Role-based access control guard (admin, instructor, learner)
-│   └── error.ts           # Centralized error handler & Zod validation formatter
+│   └── rate-limit.ts      # Cloudflare KV rate limiting guard
 ├── db/
 │   ├── index.ts           # Drizzle ORM client initialization with env.DB (D1)
 │   ├── schema.ts          # Drizzle SQLite table definitions
 │   └── migrations/        # D1 SQL migration files
 ├── lib/
-│   ├── r2.ts              # S3 presigner / R2 bucket helper
-│   ├── stripe.ts          # Stripe client & Web Crypto signature verification
-│   └── resend.ts          # Resend HTTP API client
+│   ├── crypto.ts          # Web Crypto PBKDF2 hashing & HMAC-SHA256 JWT
+│   └── email.ts           # Brevo v3 Transactional SMTP REST API client
 └── types.ts               # Env bindings interface & Hono Context types
 ```
 

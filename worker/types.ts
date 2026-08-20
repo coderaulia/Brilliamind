@@ -24,7 +24,7 @@ export interface Env {
   JWT_SECRET: string
   STRIPE_SECRET_KEY?: string
   STRIPE_WEBHOOK_SECRET?: string
-  RESEND_API_KEY?: string
+  BREVO_API_KEY?: string
   EMAIL_FROM?: string
   R2_ACCOUNT_ID?: string
   R2_ACCESS_KEY_ID?: string

@@ -8,6 +8,7 @@ import {
   Clock,
   Mail,
   UserPlus,
+  Download,
 } from 'lucide-react'
 
 interface LearnerRosterItem {
@@ -86,6 +87,40 @@ export default function CourseAnalyticsPage() {
     }
   }
 
+  const handleExportCsv = () => {
+    if (!data?.learners || data.learners.length === 0) return
+    const escapeCsv = (val: string | number | null | undefined) => {
+      if (val === null || val === undefined) return '""'
+      let str = String(val)
+      if (/^[=+\-@\t\r]/.test(str)) str = `'${str}`
+      return `"${str.replace(/"/g, '""')}"`
+    }
+
+    const rows = [
+      ['Student Name', 'Email Address', 'Enrolled Date', 'Completed Lessons', 'Total Lessons', 'Progress %', 'Status', 'Completion Date'].map(h => `"${h}"`).join(','),
+      ...data.learners.map(l => [
+        escapeCsv(l.name),
+        escapeCsv(l.email),
+        escapeCsv(l.enrolledAt ? l.enrolledAt.slice(0, 10) : ''),
+        escapeCsv(l.completedLessons),
+        escapeCsv(l.totalLessons),
+        escapeCsv(`${l.progressPct}%`),
+        escapeCsv(l.progressPct >= 100 ? 'Completed' : l.progressPct > 0 ? 'In Progress' : 'Not Started'),
+        escapeCsv(l.completedAt ? l.completedAt.slice(0, 10) : ''),
+      ].join(','))
+    ]
+
+    const blob = new Blob([rows.join('\r\n')], { type: 'text/csv;charset=utf-8;' })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement('a')
+    a.href = url
+    a.download = `course-${courseId}-progress-roster.csv`
+    document.body.appendChild(a)
+    a.click()
+    document.body.removeChild(a)
+    URL.revokeObjectURL(url)
+  }
+
   if (isLoading) {
     return (
       <div className="min-h-screen bg-[#0B1120] flex items-center justify-center text-slate-400">
@@ -113,12 +148,21 @@ export default function CourseAnalyticsPage() {
           </div>
         </div>
 
-        <button
-          onClick={() => setIsInviteModalOpen(true)}
-          className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-xs font-semibold shadow-lg shadow-indigo-500/25 transition-all"
-        >
-          <UserPlus className="w-4 h-4" /> Invite Learner
-        </button>
+        <div className="flex items-center gap-3">
+          <button
+            onClick={handleExportCsv}
+            disabled={!data?.learners || data.learners.length === 0}
+            className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 disabled:opacity-50 disabled:cursor-not-allowed text-slate-200 text-xs font-semibold border border-slate-700 transition-colors"
+          >
+            <Download className="w-3.5 h-3.5 text-indigo-400" /> Export CSV (HR)
+          </button>
+          <button
+            onClick={() => setIsInviteModalOpen(true)}
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-gradient-to-r from-indigo-500 to-purple-600 hover:from-indigo-600 hover:to-purple-700 text-white text-xs font-semibold shadow-lg shadow-indigo-500/25 transition-all"
+          >
+            <UserPlus className="w-4 h-4" /> Invite Learner
+          </button>
+        </div>
       </header>
 
       {/* Main Container */}

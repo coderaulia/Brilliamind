@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
-import { BrowserRouter, Routes, Route, useNavigate, useParams, Navigate } from 'react-router-dom'
+import { BrowserRouter, Routes, Route, useNavigate, useParams, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth'
+import { trackPageView } from '@/lib/analytics'
 
 import LandingPage from '@/pages/LandingPage'
 import OnboardingPage from '@/pages/OnboardingPage'
@@ -140,6 +141,14 @@ function ProtectedInstructorRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>
 }
 
+function RouteTracker() {
+  const location = useLocation()
+  useEffect(() => {
+    trackPageView(location.pathname)
+  }, [location.pathname])
+  return null
+}
+
 export default function App() {
   const { initAuth } = useAuthStore()
 
@@ -149,6 +158,7 @@ export default function App() {
 
   return (
     <BrowserRouter>
+      <RouteTracker />
       <Routes>
         {/* Public & Onboarding */}
         <Route path="/" element={<LandingPage />} />
