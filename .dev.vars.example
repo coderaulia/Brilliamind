@@ -1,0 +1,22 @@
+# Cloudflare Worker Environment Variables & Secrets (.dev.vars for local dev)
+
+# JWT Secret for User Authentication
+JWT_SECRET=super_secret_jwt_signing_key_change_in_production
+
+# Stripe Keys
+STRIPE_SECRET_KEY=sk_test_...
+STRIPE_WEBHOOK_SECRET=whsec_...
+
+# Resend API Key & Email Sender
+RESEND_API_KEY=re_...
+EMAIL_FROM=noreply@brilliamind.id
+
+# Cloudflare R2 S3 Credentials (for presigned upload URLs)
+R2_ACCOUNT_ID=your_cloudflare_account_id
+R2_ACCESS_KEY_ID=your_r2_access_key_id
+R2_SECRET_ACCESS_KEY=your_r2_secret_access_key
+R2_BUCKET=brilliamind-media
+R2_PUBLIC_URL=https://media.brilliamind.id
+
+# App URL
+APP_URL=http://localhost:5173

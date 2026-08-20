@@ -2,12 +2,13 @@
 
 ## LMS / E-Learning Platform (BrilliaMind.id)
 
-**Version:** 1.2  
+**Version:** 1.3  
 **Status:** Draft  
-**Author:** Coderaulia (Vanaila Digital)
-**Date:** June 2026  
+**Author:** Coderaulia (Vanaila Digital)  
+**Date:** August 2026  
 **Changelog v1.1:** Stack changed to Supabase + Cloudflare hybrid. Auth.js → Supabase Auth, Socket.io → Supabase Realtime, MeiliSearch → Postgres full-text (v1). R2 confirmed for all media.  
-**Changelog v1.2:** SCORM removed entirely. Resend confirmed as sole email service. PDF generation confirmed client-side only (jsPDF). React-pdf and Nodemailer removed.
+**Changelog v1.2:** SCORM removed entirely. Resend confirmed as sole email service. PDF generation confirmed client-side only (jsPDF). React-pdf and Nodemailer removed.  
+**Changelog v1.3:** Complete backend architecture migration to Cloudflare Workers (TypeScript + Hono) and Cloudflare D1 (Serverless SQLite at the edge) with Drizzle ORM. Live discussions deferred to v2 in favor of standard REST discussions for v1.
 
 ---
 
@@ -17,13 +18,14 @@
 
 | #   | Function               | Service                        | Tier                      | Link                                                       |
 | --- | ---------------------- | ------------------------------ | ------------------------- | ---------------------------------------------------------- |
-| A   | Database               | Supabase Postgres + RLS        | Free → $25/mo Pro         | https://supabase.com                                       |
-| B   | Authentication         | Supabase Auth                  | Included                  | https://supabase.com/docs/guides/auth                      |
-| C   | Realtime (discussions) | Supabase Realtime              | Included                  | https://supabase.com/docs/guides/realtime                  |
-| D   | Serverless compute     | Supabase Edge Functions (Deno) | Included                  | https://supabase.com/docs/guides/functions                 |
-| E   | Media storage + CDN    | Cloudflare R2 (zero egress)    | Free 10GB → pay-as-you-go | https://developers.cloudflare.com/r2                       |
-| F   | Frontend hosting       | Cloudflare Pages               | Free                      | https://pages.cloudflare.com                               |
-| G   | Search (v1)            | Postgres full-text (tsvector)  | Included in A             | https://supabase.com/docs/guides/database/full-text-search |
+| A   | Database               | Cloudflare D1 (SQLite at Edge) | Included in Workers       | https://developers.cloudflare.com/d1                       |
+| B   | Authentication         | Cloudflare Workers JWT Auth    | Included in Workers       | https://developers.cloudflare.com/workers                  |
+| C   | Serverless Compute/API | Cloudflare Workers (Hono)      | Free → $5/mo Paid         | https://hono.dev · https://workers.cloudflare.com          |
+| D   | Media Storage + CDN    | Cloudflare R2 (zero egress)    | Free 10GB → pay-as-you-go | https://developers.cloudflare.com/r2                       |
+| E   | Frontend Hosting       | Cloudflare Pages               | Free                      | https://pages.cloudflare.com                               |
+| F   | Search (v1)            | SQLite FTS5 Full-Text Search   | Included in D1            | https://www.sqlite.org/fts5.html                           |
+| G   | Email                  | Resend                         | Free tier                 | https://resend.com                                         |
+| H   | Payments (Global)      | Stripe                         | Free SDK                  | https://stripe.com/docs                                    |
 
 ### Frontend / Feature Libraries
 
@@ -33,43 +35,37 @@
 | 2   | Video Player                    | Video.js              | Apache 2.0 | https://videojs.com · https://github.com/videojs/video.js                 |
 | 2b  | YouTube/Vimeo Embed             | Plyr (iframe wrapper) | MIT        | https://plyr.io · https://github.com/sampotts/plyr                        |
 | 3   | Quiz / Assessment               | SurveyJS Form Library | MIT        | https://surveyjs.io · https://github.com/surveyjs/survey-library          |
-| 4   | Charts / Analytics UI           | Chart.js              | MIT        | https://chartjs.org · https://github.com/chartjs/Chart.js                 |
+| 4   | Charts / Analytics UI (v2)      | Chart.js              | MIT        | https://chartjs.org · https://github.com/chartjs/Chart.js                 |
 | 5   | PDF / Certificate (client-side) | jsPDF                 | MIT        | https://github.com/parallax/jsPDF                                         |
 | 6   | Calendar / Scheduling (v2)      | React Big Calendar    | MIT        | https://github.com/jquense/react-big-calendar                             |
-| 7   | Email                           | Resend                | Free tier  | https://resend.com                                                        |
-| 8   | Payment (Global)                | Stripe                | Free SDK   | https://stripe.com/docs                                                   |
-| 8b  | Payment (Indonesia, v2)         | Midtrans              | Free SDK   | https://midtrans.com · https://github.com/Midtrans/midtrans-nodejs-client |
-| 9   | Search upgrade (v2, optional)   | MeiliSearch           | MIT        | https://meilisearch.com                                                   |
+| 7   | Payment (Indonesia, v2)         | Midtrans              | Free SDK   | https://midtrans.com · https://github.com/Midtrans/midtrans-nodejs-client |
+| 8   | Search upgrade (v2, optional)   | MeiliSearch           | MIT        | https://meilisearch.com                                                   |
 
-### Replaced from v1.0
+### Replaced from Previous Versions
 
-| Removed            | Replaced By       | Reason                                                |
-| ------------------ | ----------------- | ----------------------------------------------------- |
-| Auth.js (NextAuth) | Supabase Auth     | Built-in email + OAuth, no extra code                 |
-| Socket.io          | Supabase Realtime | Postgres-change subscriptions, zero server management |
-| MeiliSearch (v1)   | Postgres tsvector | Good enough for v1, one less service to run           |
-| MinIO              | —                 | R2 chosen; no self-hosted storage needed              |
-| Matrix SDK         | —                 | Out of scope                                          |
-| SCORM Again        | —                 | Removed entirely; no SCORM requirement                |
-| React-pdf          | —                 | jsPDF client-side sufficient; React-pdf unnecessary   |
-| Nodemailer         | Resend            | Nodemailer incompatible with Deno Edge Functions      |
+| Removed                         | Replaced By                    | Reason                                                     |
+| ------------------------------- | ------------------------------ | ---------------------------------------------------------- |
+| Supabase Edge Functions (Deno)  | Cloudflare Workers (Hono / TS) | Unified edge compute with R2/D1 native bindings            |
+| Supabase Postgres + RLS         | Cloudflare D1 + Drizzle ORM    | Native serverless SQLite at edge, zero connection poolers |
+| Supabase Auth                   | Cloudflare Worker JWT Auth     | Self-contained edge auth with Web Crypto                   |
+| Supabase Realtime               | REST (v1) / WebSockets (v2)    | Simplified v1 discussions, realtime planned for v2         |
+| Postgres tsvector               | SQLite FTS5                    | Built-in D1 full-text search index                         |
+| SCORM Again / Nodemailer        | Resend                         | Pure HTTP API, zero server overhead                        |
 
 ---
 
 ## 2. Product Overview
 
-**Product Name:** TBD (working name: LearnOS)  
+**Product Name:** BrilliaMind LMS (working name: LearnOS)  
 **Type:** Web-based LMS / E-Learning Platform  
 **Target Users:** Corporate HR teams, training providers, digital academies (Indonesia-first, global capable)
 
 **Stack Assumption:**
-
-- Frontend: React 19 + Vite + Tailwind, deployed on Cloudflare Pages
-- Backend: Supabase (Postgres + RLS as primary API via supabase-js; Edge Functions for webhooks, payment handling, emails)
-- Media: Cloudflare R2 with public bucket + CDN
-- Architecture pattern: same as HR Performance Suite (browser SPA + Supabase), proven stack
-
-**SSR Note:** v1 ships as Vite SPA. If public course catalog SEO becomes a priority, migrate catalog pages to Next.js on CF Pages (or pre-render static catalog pages) in v2.
+- Frontend: React 19 + Vite + Tailwind CSS, deployed on Cloudflare Pages
+- Backend: Cloudflare Workers (Hono framework) exposing typed REST API (`/api/*`)
+- Database: Cloudflare D1 (SQLite) with Drizzle ORM
+- Media: Cloudflare R2 with public bucket + CDN (zero egress)
+- Email: Resend via Worker HTTP client
 
 ---
 
@@ -82,222 +78,102 @@
 | Learner    | Enroll, take courses, view certificates               |
 | Guest      | Browse public course catalog only                     |
 
-Role enforcement: Postgres RLS policies per role + `role` column on `profiles` table.
+Role enforcement: Cloudflare Worker JWT authentication middleware and `profiles.role` checks.
 
 ---
 
 ## 4. Core Modules & Feature Requirements
 
----
-
 ### 4.1 Authentication & User Management
-
-**Service:** Supabase Auth
-
-**Requirements:**
-
-- Email/password signup + login (Supabase Auth built-in)
-- OAuth: Google (enable in Supabase dashboard)
-- Email verification on signup (Supabase built-in)
-- Password reset flow (Supabase built-in, custom email template)
-- `profiles` table linked to `auth.users` via trigger: name, avatar_url, bio, role
-- RLS: users read/update own profile; admin reads all
-- Session: Supabase JWT, auto-refresh via supabase-js
-
-**Out of scope (v1):** SSO/SAML, magic link, phone OTP
-
----
+**Service:** Cloudflare Workers JWT Auth + D1 Profiles
+- Email/password signup + login with password hashing via Web Crypto / bcrypt.
+- Google OAuth token verification and account linking.
+- JWT session tokens issued upon login and validated via Worker middleware.
+- Profiles table in D1 stores user role, avatar, bio, and creation date.
 
 ### 4.2 Course Management
-
-**Libraries:** Tiptap (editor), R2 (media)
-
-**Requirements:**
-
-- Instructors create, edit, publish, archive courses
-- Course fields: title, slug, description, cover image (R2), category, tags, price, currency, visibility (public/private/draft)
-- Structure: Course > Sections > Lessons
-- Lesson types:
-   - Rich text (Tiptap, stored as JSON in `content_json`)
-   - Video (R2 upload, Video.js playback)
-   - YouTube/Vimeo embed (URL, Plyr)
-   - PDF attachment (R2)
-   - Quiz (SurveyJS JSON schema)
-- Drag-and-drop reorder (position integer columns)
-- Auto-save drafts (debounced upsert via supabase-js)
-- Preview mode before publish
-- RLS: instructors CRUD own courses; learners read enrolled/published only
-
----
+**Libraries:** Tiptap (editor), R2 (media), Drizzle ORM
+- Instructors create, edit, publish, archive courses.
+- Course fields: title, slug, description, cover image (R2), category, tags, price, currency, status.
+- Structure: Course > Sections > Lessons.
+- Lesson types: Rich text (Tiptap JSON), Video (R2 upload), YouTube/Vimeo embed, PDF, Quiz.
+- Auto-save drafts via debounced `PUT /api/lessons/:id`.
 
 ### 4.3 Video Playback
-
 **Libraries:** Video.js, Plyr · **Storage:** Cloudflare R2
-
-**Requirements:**
-
-- Upload MP4 to R2 via presigned URL (generated by Edge Function with R2 S3-compatible API)
-- Stream from R2 public bucket through Cloudflare CDN (zero egress cost)
-- YouTube/Vimeo: paste URL → Plyr embed
-- Controls: play/pause, seek, volume, fullscreen, speed (0.5x–2x)
-- Resume from last position (`video_watch_logs.watch_seconds`, upsert every 10s)
-- Completion: 90% watched → lesson marked complete
-
----
+- Upload MP4 to R2 via S3 presigned PUT URL generated by Worker `/api/r2/presign`.
+- Stream from R2 public bucket through Cloudflare CDN.
+- YouTube/Vimeo: paste URL → Plyr embed.
+- Resume from last position (`video_watch_logs.watch_seconds`, throttled upsert every 10s).
+- Completion: 90% watched marks lesson complete.
 
 ### 4.4 Quiz & Assessment
-
 **Library:** SurveyJS Form Library (MIT — renderer only)
-
-**Requirements:**
-
-- Quiz schema stored as JSON in `quiz_definitions.schema_json`
-- v1 quiz creator: simple custom form in admin UI that outputs SurveyJS JSON (do NOT use commercial SurveyJS Creator)
-- Question types: multiple choice, multi-select, true/false, short answer, rating
-- Per-quiz settings: time limit, passing score, max attempts, randomize question order
-- Auto-grading client-side, score verified server-side in Edge Function before insert (prevent tampering)
-- Results: score, pass/fail, per-question feedback (configurable)
-- Attempt history stored in `quiz_attempts`, RLS: learner reads own, instructor reads own courses'
-
----
+- Quiz schema stored as JSON in `quiz_definitions.schema_json`.
+- Simple custom quiz creator in admin UI generating SurveyJS JSON.
+- Question types: multiple choice, multi-select, true/false, short answer, rating.
+- Server-side grading via Worker `/api/quiz/verify` to prevent client-side score tampering.
+- Enforces attempt limits and records attempt history.
 
 ### 4.5 Progress Tracking
-
-**Library:** Chart.js · **Data:** Postgres views
-
-**Requirements:**
-
-- Learner dashboard: enrolled courses, completion %, last activity, certificates earned
-- Course progress: per-lesson completion checklist
-- Instructor dashboard (v2): enrollment counts, avg completion, quiz score distribution (Chart.js bar), activity over time (line)
-- Admin dashboard (v2): platform enrollments, revenue, DAU/MAU
-- Implementation: Postgres views (`course_progress_view`) computed from `user_progress` + `enrollments`; queried via supabase-js
-
----
+**Data:** D1 SQL Views & Aggregations
+- Learner dashboard: enrolled courses, completion percentage, last activity, earned certificates.
+- Course progress: per-lesson completion checklist via `/api/progress/course/:courseId`.
 
 ### 4.6 Certificate Generation
+**Library:** jsPDF (client-side) · **Trigger:** Cloudflare Worker `/api/quiz/verify`
+- Trigger: All lessons complete + passing score on all required quizzes → auto-inserts row into `certificates`.
+- Certificate PDF generated client-side using jsPDF template.
+- Public verification: `/verify/:certUuid` queried via public Worker endpoint.
 
-**Library:** jsPDF (client-side) · **Trigger:** Supabase Edge Function + DB trigger
-
-**Requirements:**
-
-- Trigger: all lessons complete + required quizzes passed → insert into `certificates` (Postgres trigger via Edge Function)
-- Fields: learner name, course name, completion date, instructor name, cert UUID
-- PDF generated client-side with jsPDF from default hardcoded template; download button on learner dashboard
-- Public verification: `/verify/:certUuid` → public RLS select on `certificates` (limited columns)
-- v2: admin-customizable template
-
----
-
-### 4.7 Discussions (Real-time)
-
-**Service:** Supabase Realtime
-
-**Requirements:**
-
-- Per-lesson threaded discussion (`discussions` table, `parent_id` for replies)
-- Live updates: subscribe to Postgres changes on `discussions` filtered by `lesson_id`
-- Simple text + basic markdown (rendered with marked.js or Tiptap read-only)
-- Notification badge updates live via Realtime subscription
-- RLS: enrolled learners + course instructor can read/insert; authors edit/delete own
-
----
+### 4.7 Discussions (REST)
+**Service:** Cloudflare Workers REST API
+- Per-lesson threaded comments (`discussions` table in D1 with `parent_id`).
+- Standard REST endpoints (`/api/discussions/lesson/:lessonId`).
+- Markdown rendered safely with DOMPurify sanitization.
+- *(Real-time WebSocket / SSE sync planned for v2)*.
 
 ### 4.8 Notifications (Email)
-
-**Service:** Resend via Supabase Edge Functions + Database Webhooks
-
-**Trigger events:**
-| Event | Recipient | Sent By |
-|-------|-----------|---------|
-| Signup verification | Learner | Supabase Auth (built-in) |
-| Password reset | Learner | Supabase Auth (built-in) |
-| Enrollment confirmation | Learner | Edge Function + Resend |
-| Quiz result | Learner | Edge Function + Resend |
-| Certificate issued | Learner | Edge Function + Resend |
-| New discussion reply | Thread participants | DB Webhook → Edge Function + Resend |
-| Purchase receipt | Learner | Stripe webhook → Edge Function + Resend |
-
-Implementation: Supabase Database Webhooks fire on table insert/update → Edge Function calls Resend HTTP API.
-
----
+**Service:** Resend via Cloudflare Workers
+- Triggered on enrollment confirmation, quiz results, certificate issuance, and payment receipt.
+- Direct REST calls to Resend API (`https://api.resend.com/emails`).
 
 ### 4.9 Search
-
-**Service:** Postgres full-text search (v1)
-
-**Requirements:**
-
-- `tsvector` column on `courses` (title + description + tags), GIN index, trigger to keep updated
-- Search endpoint via supabase-js `.textSearch()`
-- Filters: category, free/paid, level
-- Typeahead: ILIKE prefix query on title (fast enough with index)
-- v2 upgrade path: MeiliSearch if relevance quality or fuzzy matching becomes a problem
-
----
+**Service:** SQLite FTS5 on Cloudflare D1
+- `courses_fts` full-text search index across title, description, and tags.
+- Query endpoint: `/api/courses/search?q=...`.
 
 ### 4.10 File & Media Storage
-
 **Service:** Cloudflare R2
-
-**Requirements:**
-
-- Presigned upload URLs from Edge Function (R2 S3 API, aws4fetch in Deno)
-- Limits: video 2GB, image 10MB, PDF 50MB
-- Path convention: `courses/{courseId}/lessons/{lessonId}/{filename}`
-- Public bucket + custom domain for CDN delivery
-- File metadata tracked in `media_files` table (size, type, owner) for storage quota reporting
-
----
+- S3 presigned upload URLs from `/api/r2/presign`.
+- Limits: video 2GB, image 10MB, PDF 50MB.
+- Path convention: `courses/{courseId}/lessons/{lessonId}/{filename}`.
 
 ### 4.11 Payments & Monetization
-
 **Libraries:** Stripe (global), Midtrans (Indonesia, v2)
-
-**Requirements:**
-
-- Pricing: free or one-time paid (subscription in v2)
-- Flow: course page → checkout → Stripe Checkout Session (created by Edge Function) → webhook → auto-enroll
-- Stripe webhook handler: Edge Function verifies signature, inserts `payments` + `enrollments`
-- Midtrans (v2): Snap checkout, VA/QRIS/GoPay/OVO; webhook → same enrollment flow
-- Revenue share: `platform_fee_pct` config; payout ledger in v2
-- Receipt email on purchase (Resend)
-- Free courses: direct enroll insert (RLS-guarded)
-
----
-
-### 4.12 Live Sessions / ILT (v2)
-
-**Library:** React Big Calendar
-
-- Instructor schedules sessions (title, datetime, duration, meeting URL)
-- Learner calendar view (month/week/day)
-- Reminder email 24h before (pg_cron + Edge Function)
-- Attendance marking
+- Flow: course page → `/api/stripe/checkout` → Stripe Checkout → `/api/stripe/webhook` → auto-enroll.
+- Webhook signature verified with Web Crypto.
 
 ---
 
 ## 5. Non-Functional Requirements
 
-| Area              | Requirement                                                                                        |
-| ----------------- | -------------------------------------------------------------------------------------------------- |
-| Performance       | Page load < 3s, video start < 2s (R2 + CF CDN)                                                     |
-| Mobile            | Fully responsive SPA                                                                               |
-| SEO               | v1: SPA with meta tags; v2: pre-rendered/SSR catalog if selling publicly                           |
-| Security          | RLS on every table, Supabase JWT, sanitize Tiptap HTML output, server-side quiz score verification |
-| Scalability       | Stateless SPA + managed Supabase; R2 handles media scale                                           |
-| Cost ceiling (v1) | Supabase Free/Pro ($0–25/mo) + R2 (~free under 10GB) + Pages (free)                                |
-| Data              | Supabase daily backups (Pro); manual pg_dump on Free                                               |
-| UU PDP / GDPR     | User data export + delete via admin function                                                       |
+| Area          | Requirement                                                                      |
+| ------------- | -------------------------------------------------------------------------------- |
+| Performance   | Sub-second API response at edge, video start < 2s (R2 + CF CDN)                 |
+| Mobile        | Fully responsive SPA (React 19 + Tailwind)                                       |
+| Security      | JWT authentication, CORS lockdown, DOMPurify HTML sanitization, server quiz grade |
+| Scalability   | Stateless Cloudflare Workers + serverless D1 + R2 media scale                     |
+| Cost Ceiling  | Free / $5 Workers plan + R2 pay-as-you-go + Pages free tier                      |
 
 ---
 
-## 6. Database Schema (Key Tables)
+## 6. Database Schema Summary (D1)
 
 ```
-profiles            — id (FK auth.users), name, role, avatar_url, bio, created_at
+profiles            — id, email, password_hash, name, role, avatar_url, bio, created_at
 courses             — id, instructor_id, title, slug, description, cover_url,
-                      category, tags[], price, currency, status, search_tsv, created_at
+                      category, tags, price, currency, status, created_at
 sections            — id, course_id, title, position
 lessons             — id, section_id, title, type, content_json, video_url,
                       pdf_url, position, is_free_preview
@@ -311,35 +187,30 @@ discussions         — id, lesson_id, user_id, parent_id, body, created_at
 payments            — id, user_id, course_id, provider, provider_ref, amount,
                       currency, status, paid_at
 media_files         — id, owner_id, course_id, r2_key, size_bytes, mime, created_at
-live_sessions (v2)  — id, course_id, instructor_id, title, starts_at, duration_min, meeting_url
+courses_fts         — SQLite FTS5 virtual table
 ```
-
-All tables: RLS enabled. Admin bypass via service role key in Edge Functions only.
 
 ---
 
-## 7. MVP Scope (Phase 1)
+## 7. MVP Scope (v1)
 
 **v1 includes:**
-
-- Supabase Auth (email + Google)
-- Course creation: text (Tiptap) / video (R2 + Video.js) / YouTube embed (Plyr) / quiz (SurveyJS)
-- Resume video playback + progress tracking
-- Quiz auto-grading with server-side verification
-- Learner progress dashboard
-- Certificate PDF (jsPDF) + public verification page
-- Free enrollment + Stripe paid checkout
-- Email notifications (Resend via Edge Functions)
-- Per-lesson discussions (Supabase Realtime)
-- Course search (Postgres full-text)
+- Cloudflare Workers API with JWT Auth (email + Google OAuth).
+- Course authoring: text (Tiptap) / video (R2 + Video.js) / YouTube embed (Plyr) / quiz (SurveyJS).
+- Video watch progress & checklist tracking.
+- Quiz auto-grading with authoritative server-side verification.
+- Learner progress dashboard & certificates (jsPDF + `/verify/:certUuid`).
+- Free enrollment & Stripe paid checkout.
+- Resend email notifications from Worker.
+- Lesson discussions (REST).
+- Course search via SQLite FTS5.
 
 **v2 defers:**
-
-- Live sessions calendar (React Big Calendar)
-- Midtrans payments
-- Instructor/admin analytics dashboards (Chart.js)
-- MeiliSearch upgrade
-- Subscriptions, payouts, custom cert templates
+- Live sessions calendar (React Big Calendar).
+- Live Realtime discussions (WebSockets / Durable Objects).
+- Midtrans payment gateway.
+- Instructor & admin analytics dashboards (Chart.js).
+- Subscriptions and instructor payouts.
 
 ---
 
@@ -347,18 +218,15 @@ All tables: RLS enabled. Admin bypass via service role key in Edge Functions onl
 
 | Layer       | Tech                                   |
 | ----------- | -------------------------------------- |
-| Frontend    | React 19 + Vite + Tailwind + shadcn/ui |
+| Frontend    | React 19 + Vite + Tailwind CSS         |
 | Hosting     | Cloudflare Pages                       |
-| Database    | Supabase Postgres + RLS                |
-| Auth        | Supabase Auth                          |
-| Realtime    | Supabase Realtime                      |
-| Serverless  | Supabase Edge Functions (Deno)         |
+| Backend API | Cloudflare Workers (TypeScript + Hono) |
+| Database    | Cloudflare D1 (SQLite) + Drizzle ORM   |
 | Storage/CDN | Cloudflare R2                          |
-| Search      | Postgres tsvector (v1)                 |
+| Search      | SQLite FTS5 on D1                      |
 | Email       | Resend                                 |
-| Payments    | Stripe (v1), Midtrans (v2)             |
-| Client SDK  | supabase-js                            |
+| Payments    | Stripe                                 |
 
 ---
 
-_End of PRD v1.2_
+_End of PRD v1.3_
