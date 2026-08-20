@@ -14,6 +14,10 @@ out/
 # Keep the lockfile checked into Git!
 !pnpm-lock.yaml
 
+# Cloudflare & Wrangler
+.wrangler/
+.dev.vars
+.dev.vars.local
 
 # Environment — never commit secrets
 .env
@@ -43,6 +47,3 @@ Thumbs.db
 
 # TypeScript
 *.tsbuildinfo
-
-# Supabase local dev
-supabase/.temp/
