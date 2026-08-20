@@ -457,18 +457,32 @@ export default function LandingPage() {
             </div>
             <p style={{ fontSize: 13, color: 'rgba(255,255,255,.35)', fontWeight: 500, lineHeight: 1.7, marginTop: 12, maxWidth: 260 }}>Expert-led courses in design, development, analytics, and business. Learn at your own pace and earn certificates that matter.</p>
           </div>
-          {[
-            { title: 'Courses',  links: ['UI/UX Design', 'JavaScript', 'Python & Data', 'Product Management', 'Machine Learning'] },
-            { title: 'Platform', links: ['How It Works', 'Certificates', 'For Teams', 'Become an Instructor'] },
-            { title: 'Support',  links: ['Help Centre', 'Contact Us', 'Privacy Policy', 'Terms of Service'] },
-          ].map(col => (
-            <div key={col.title}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.5)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 14 }}>{col.title}</div>
-              <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
-                {col.links.map(l => <a key={l} href="#" className="lp-footer-link" style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,.3)', textDecoration: 'none', transition: 'color .15s' }}>{l}</a>)}
-              </div>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.5)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 14 }}>Explore</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+              <Link to="/onboarding" className="lp-footer-link" style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,.4)', textDecoration: 'none' }}>Course Catalog</Link>
+              <Link to="/register/instructor" className="lp-footer-link" style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,.4)', textDecoration: 'none' }}>Become an Instructor</Link>
+              <Link to="/login" className="lp-footer-link" style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,.4)', textDecoration: 'none' }}>Member Sign In</Link>
             </div>
-          ))}
+          </div>
+
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.5)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 14 }}>Support</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+              <Link to="/faq" className="lp-footer-link" style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,.4)', textDecoration: 'none' }}>FAQ & Help Center</Link>
+              <Link to="/data-safety" className="lp-footer-link" style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,.4)', textDecoration: 'none' }}>Data Safety & Security</Link>
+              <a href="mailto:support@brilliamind.id" className="lp-footer-link" style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,.4)', textDecoration: 'none' }}>Contact Team</a>
+            </div>
+          </div>
+
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(255,255,255,.5)', textTransform: 'uppercase', letterSpacing: '.07em', marginBottom: 14 }}>Legal</div>
+            <div style={{ display: 'flex', flexDirection: 'column', gap: 9 }}>
+              <Link to="/privacy" className="lp-footer-link" style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,.4)', textDecoration: 'none' }}>Privacy Policy</Link>
+              <Link to="/terms" className="lp-footer-link" style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,.4)', textDecoration: 'none' }}>Terms of Service</Link>
+              <Link to="/data-safety" className="lp-footer-link" style={{ fontSize: 13, fontWeight: 500, color: 'rgba(255,255,255,.4)', textDecoration: 'none' }}>PDP & GDPR Notice</Link>
+            </div>
+          </div>
         </div>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderTop: '1px solid rgba(255,255,255,.05)', paddingTop: 22, maxWidth: 1100, margin: '0 auto' }}>
           <div style={{ fontSize: 12, color: 'rgba(255,255,255,.2)', fontWeight: 500 }}>© 2026 Vanaila Digital. All rights reserved.</div>

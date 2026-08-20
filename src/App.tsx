@@ -30,6 +30,10 @@ import CertificatesPage from '@/pages/learner/CertificatesPage'
 import SettingsPage from '@/pages/learner/SettingsPage'
 import CoursePlayerPage from '@/pages/learner/CoursePlayerPage'
 import VerifyCertificatePage from '@/pages/public/VerifyCertificatePage'
+import PrivacyPolicyPage from '@/pages/public/PrivacyPolicyPage'
+import TermsOfServicePage from '@/pages/public/TermsOfServicePage'
+import FAQPage from '@/pages/public/FAQPage'
+import DataSafetyPage from '@/pages/public/DataSafetyPage'
 import CourseDetailModal from '@/components/course/CourseDetailModal'
 import { CATALOG_COURSES } from '@/data/mock-data'
 
@@ -149,6 +153,13 @@ export default function App() {
         {/* Public & Onboarding */}
         <Route path="/" element={<LandingPage />} />
         <Route path="/onboarding" element={<OnboardingPage />} />
+        <Route path="/privacy" element={<PrivacyPolicyPage />} />
+        <Route path="/terms" element={<TermsOfServicePage />} />
+        <Route path="/tos" element={<TermsOfServicePage />} />
+        <Route path="/faq" element={<FAQPage />} />
+        <Route path="/help" element={<FAQPage />} />
+        <Route path="/data-safety" element={<DataSafetyPage />} />
+        <Route path="/security" element={<DataSafetyPage />} />
 
         {/* Authentication Routes */}
         <Route path="/login" element={<LoginPage />} />
