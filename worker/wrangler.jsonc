@@ -1,0 +1,30 @@
+{
+  "name": "brilliamind-api",
+  "main": "index.ts",
+  "compatibility_date": "2026-08-01",
+  "compatibility_flags": ["nodejs_compat"],
+  "d1_databases": [
+    {
+      "binding": "DB",
+      "database_name": "brilliamind-db",
+      "database_id": "local-db",
+      "migrations_dir": "db/migrations"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "MEDIA_BUCKET",
+      "bucket_name": "brilliamind-media"
+    }
+  ],
+  "kv_namespaces": [
+    {
+      "binding": "KV",
+      "id": "local-kv"
+    }
+  ],
+  "vars": {
+    "APP_URL": "http://localhost:5173",
+    "R2_PUBLIC_URL": "https://media.brilliamind.id"
+  }
+}

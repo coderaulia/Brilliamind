@@ -24,7 +24,10 @@ cp .dev.vars.example .dev.vars
 # 3. Apply migrations to local D1 database
 pnpm run db:migrate:local
 
-# 4. Start frontend and worker dev servers
+# 4. Seed initial Superadmin account (admin@brilliamind.id)
+pnpm run db:seed
+
+# 5. Start frontend and worker dev servers
 pnpm run dev              # Vite SPA on http://localhost:5173
 pnpm run dev:worker       # Cloudflare Worker API on http://localhost:8787
 ```
@@ -36,7 +39,7 @@ pnpm run dev:worker       # Cloudflare Worker API on http://localhost:8787
 ### Frontend (`.env.local`)
 | Variable | Description |
 |----------|-------------|
-| `VITE_API_URL` | Cloudflare Worker API base URL (`http://localhost:8787` or `/api`) |
+| `VITE_API_URL` | Cloudflare Worker API base URL (`http://localhost:8787` in dev or `/api`) |
 | `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key |
 | `VITE_R2_PUBLIC_URL` | Cloudflare R2 CDN public base URL |
 | `VITE_APP_URL` | App base URL (`http://localhost:5173` in dev) |
@@ -51,6 +54,43 @@ Set via `.dev.vars` for local dev or `wrangler secret put <KEY>` for production:
 - `R2_ACCOUNT_ID`: Cloudflare Account ID for presigned uploads
 - `R2_ACCESS_KEY_ID`: S3-compatible R2 Access Key ID
 - `R2_SECRET_ACCESS_KEY`: S3-compatible R2 Secret Access Key
+
+---
+
+## MVP Feature Architecture
+
+### 1. Instructor Registration & Superadmin Approval
+- Instructors register at `/register/instructor`. Their account is assigned `role: 'instructor'` and `status: 'pending'`.
+- Logging in while pending shows a "Pending Superadmin Approval" notice and blocks studio access.
+- Superadmin visits `/admin/instructors` to review and approve (`status = 'active'`) or reject applications.
+
+### 2. Course Creation & YouTube Video Embeds
+- Approved instructors create courses at `/instructor/courses/new`.
+- Instructors can add sections and video lessons (`type: 'youtube' | 'video'`) with third-party embed links (YouTube, Vimeo, MP4).
+- Instructors can toggle courses between `draft` and `published`.
+
+### 3. Invitation-Only Learner Onboarding & Password Management
+- Public learner registration is disabled.
+- Superadmin or Course Instructors invite learners via email (`POST /api/admin/invite-user` or `POST /api/instructor/invite-learner`).
+- The worker generates a cryptographic token, creates an `invitations` record with target `course_ids`, and sends an invite link `/invite/accept?token=...`.
+- Participant visits the link, sets their name and password, which automatically activates their account, enrolls them in designated courses, and logs them in.
+- **Password Reset**: Self-service via `/forgot-password` (token emailed), or Superadmin override via `/admin/users`.
+
+### 4. Learner Course Playback & Video Progression
+- Enrolled learners access the course player at `/learn/:courseId`.
+- The player embeds the YouTube video using Plyr / iframe and provides a curriculum checklist.
+- Finishing a video or clicking complete sends `POST /api/progress/lesson`, automatically recalculating overall course progress.
+
+### 5. Dashboards & Progress Analytics
+- **Learner Dashboard (`/dashboard`)**: Displays active enrolled courses, overall completion percentage rings, and quick-resume buttons.
+- **Instructor Analytics (`/instructor/courses/:id/learners`)**: Real-time roster table of enrolled learners, completed lesson counts, progress percentage bars, and last active timestamps.
+
+### 6. Backend Authentication & Security Hardening
+- Edge-compatible Web Crypto PBKDF2 password hashing (100k iterations SHA-256 + salt).
+- Signed JWT tokens with role claims and expiration.
+- KV-backed rate limiting on auth endpoints.
+- Strict RBAC middleware (`requireRole('admin')`, `requireRole('instructor')`, `requireRole('learner')`).
+- Zod schema validation on all incoming request bodies.
 
 ---
 
@@ -97,6 +137,9 @@ pnpm run build               # Type-check + production build
 pnpm run preview             # Preview production frontend build
 pnpm run lint                # ESLint
 pnpm run type-check          # tsc --noEmit
+pnpm run db:generate         # Generate D1 SQL migrations from Drizzle schema
+pnpm run db:migrate:local    # Apply migrations locally
+pnpm run db:seed             # Seed superadmin and initial mock course data
 ```
 
 ---
