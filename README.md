@@ -1,56 +1,73 @@
 # BrilliaMind LMS
 
-Web-based LMS / E-Learning Platform. Indonesia-first, global capable.
+Modern, scalable LMS / E-Learning Platform. Built on serverless Cloudflare Edge architecture with TypeScript, React 19, Hono, and Cloudflare D1.
 
 **Stack:** React 19 · Vite · TypeScript · Tailwind CSS · Cloudflare Workers (Hono) · Cloudflare D1 (SQLite) · Cloudflare R2 + Pages · Drizzle ORM · Stripe · Resend
 
 ---
 
-## Quick Start
+## ⚡ MVP Feature Highlights
+
+1. **Instructor Registration & Superadmin Approvals**:
+   - Instructors apply at `/register/instructor` (created with `status = 'pending'`).
+   - Superadmin reviews and authorizes instructors in the Control Center (`/admin`).
+2. **Curriculum Studio & YouTube Video Embeds**:
+   - Authorized instructors create structured modules/sections and attach YouTube/video lessons with live embed preview and free-preview flags.
+3. **Invitation-Only Participant Onboarding & Password Management**:
+   - Invitation links (`/invite/accept?token=...`) allow participants to set their own password and auto-enroll.
+   - Self-service password recovery (`/forgot-password` and `/reset-password`) + Superadmin password reset override.
+4. **Interactive Course Player & Progression Checklist**:
+   - Course Player (`/learn/:courseId`) with real-time lesson completion checkboxes and automated course completion detection (`POST /api/progress/lesson`).
+5. **Dashboards & Learner Roster Analytics**:
+   - Learner Dashboard (`/dashboard`) with completion progress rings.
+   - Instructor Analytics (`/instructor/courses/:id/learners`) with student progress roster.
+6. **Hardened Edge Security**:
+   - Web Crypto PBKDF2 (100k iterations SHA-256), HMAC-SHA256 JWT tokens, KV rate limiting, and RBAC middleware.
+
+---
+
+## 🚀 Quick Start
 
 ```bash
 # 1. Install dependencies
 pnpm install
 
 # 2. Configure environment variables
-cp .env.example .env.local       # Frontend env (Vite)
-cp .dev.vars.example .dev.vars   # Worker secrets (Wrangler)
+cp .env.example .env.local
+cp .dev.vars.example worker/.dev.vars
 
 # 3. Apply local D1 database migrations
 pnpm run db:migrate:local
 
 # 4. Start frontend and worker dev servers
-pnpm run dev              # Vite SPA on http://localhost:5173
 pnpm run dev:worker       # Cloudflare Worker API on http://localhost:8787
+pnpm run dev              # Vite SPA on http://localhost:5173
 ```
 
 ---
 
-## Env Variables
+## 🧪 Quick Test Credentials (Local Demo)
 
-### Frontend (`.env.local`)
-| Variable | Description |
-|----------|-------------|
-| `VITE_API_URL` | Backend API base URL (`http://localhost:8787` in dev or `/api` via proxy) |
-| `VITE_STRIPE_PUBLISHABLE_KEY` | Stripe publishable key |
-| `VITE_R2_PUBLIC_URL` | Cloudflare R2 CDN public base URL |
-| `VITE_APP_URL` | App base URL (`http://localhost:5173` in dev) |
+Click **"Seed Demo DB"** on the [Login Page](http://localhost:5173/login) (or send `POST http://localhost:8787/api/seed`) to initialize demo accounts:
 
-### Worker Secrets (`.dev.vars` / `wrangler secret put`)
-Set via `.dev.vars` for local dev or `wrangler secret put <KEY>` for production:
-`JWT_SECRET`, `STRIPE_SECRET_KEY`, `STRIPE_WEBHOOK_SECRET`, `RESEND_API_KEY`, `EMAIL_FROM`, `R2_ACCOUNT_ID`, `R2_ACCESS_KEY_ID`, `R2_SECRET_ACCESS_KEY`.
+| Role | Email | Password | Primary Route | Purpose |
+| :--- | :--- | :--- | :--- | :--- |
+| **Superadmin** | `admin@brilliamind.id` | `Admin123!` | `/admin` | Approve instructors, manage users, send invites |
+| **Approved Instructor** | `sarah.mitchell@brilliamind.id` | `Instructor123!` | `/instructor/courses` | Create courses, add YouTube lessons, view learners |
+| **Pending Instructor** | `alex.tan@brilliamind.id` | `Instructor123!` | `/login` | Test pending approval banner & blocked login |
+| **Enrolled Learner** | `budi.santoso@brilliamind.id` | `Learner123!` | `/dashboard` | Watch YouTube lessons, check off progress |
 
 ---
 
-## Commands
+## 🛠️ Commands
 
 ```bash
-pnpm run dev                 # Start Vite frontend dev server
-pnpm run dev:worker          # Start local Cloudflare Worker (Wrangler)
+pnpm run dev                 # Start Vite frontend dev server (port 5173)
+pnpm run dev:worker          # Start local Cloudflare Worker (port 8787)
 pnpm run build               # Production build (tsc -b && vite build)
 pnpm run preview             # Preview production build
 pnpm run type-check          # tsc --noEmit
-pnpm run lint                # ESLint
+pnpm run lint                # ESLint code verification
 
 # Database & Migrations (D1 + Drizzle)
 pnpm run db:generate         # Generate SQL migrations from Drizzle schema
@@ -63,53 +80,42 @@ pnpm run deploy:worker       # Deploy Cloudflare Worker API (wrangler deploy)
 
 ---
 
-## Project Structure
+## 📁 Project Structure
 
 ```
 src/
   components/       # UI primitives, layout, feature components
-  pages/            # public/, auth/, learner/, instructor/, admin/
-  hooks/            # data-fetching and mutation hooks
+  pages/
+    auth/           # LoginPage, InstructorRegisterPage, AcceptInvitePage, Forgot/ResetPassword
+    admin/          # AdminDashboardPage (instructor approvals, user directory, invitations)
+    instructor/     # CourseManagerPage, CourseEditorPage, CourseAnalyticsPage
+    learner/        # DashboardPage, MyCoursesPage, CatalogPage, CoursePlayerPage, CertificatesPage
+    public/         # LandingPage, OnboardingPage, VerifyCertificatePage
   stores/           # Zustand (auth, ui)
-  lib/              # api client, stripe, r2 helpers, utils
-  types/            # shared TypeScript types & D1 schema models
+  lib/              # typed api client, utils
 worker/
-  index.ts          # Hono app entry point
+  index.ts          # Hono app entry point & CORS
   wrangler.jsonc    # Cloudflare Wrangler config (D1, R2, KV bindings)
-  routes/           # auth, courses, r2, stripe, quiz, progress, certificates, discussions, email
-  middleware/       # JWT auth, role validation, error handling
-  db/               # Drizzle ORM client, schema, migrations
-  lib/              # S3 presigner, Stripe helper, Resend HTTP client
-  types.ts          # Env bindings & Hono context types
+  routes/           # auth, admin, courses, progress, seed
+  middleware/       # JWT auth, role validation, rate limiting
+  db/               # Drizzle ORM schema, migrations, SQLite client
+  lib/              # Web Crypto PBKDF2/JWT, Resend email client
 docs/
-  PRD.md            # Product Requirements Document v1.3
+  PRD.md            # Product Requirements Document v1.4
   ARCHITECTURE.md   # System topology, folder structure, data flow
   DATABASE.md       # Cloudflare D1 schema (SQLite) + Drizzle ORM
   WORKERS.md        # Cloudflare Workers API specs & Hono routes
-  FEATURES.md       # Feature breakdown, build order, gotchas
-  DEVELOPMENT.md    # Setup guide, deployment, code conventions
+  FEATURES.md       # Feature breakdown & implementation progression
+  DEVELOPMENT.md    # Setup guide, test accounts, deployment
 ```
 
 ---
 
-## User Roles
+## 📖 Documentation Index
 
-| Role | Access |
-|------|--------|
-| Admin | Full platform, user management, settings |
-| Instructor | Create/manage own courses, view learner progress |
-| Learner | Enroll, take courses, earn certificates |
-| Guest | Browse public course catalog only |
-
-Role enforced by Cloudflare Worker JWT authentication middleware and `profiles.role`.
-
----
-
-## Docs
-
-- [PRD v1.3](docs/PRD.md) — full product requirements
-- [Architecture](docs/ARCHITECTURE.md) — system design and data flows
+- [PRD v1.4](docs/PRD.md) — Product requirements and MVP scope
+- [Architecture](docs/ARCHITECTURE.md) — System design and data flows
 - [Database](docs/DATABASE.md) — Cloudflare D1 schema, Drizzle ORM, FTS5
 - [Workers API](docs/WORKERS.md) — Cloudflare Workers & Hono API specs
-- [Features](docs/FEATURES.md) — implementation order and gotchas
-- [Development](docs/DEVELOPMENT.md) — local setup and deployment
+- [Features](docs/FEATURES.md) — Feature breakdown & implementation progression
+- [Development](docs/DEVELOPMENT.md) — Setup guide, test accounts, and deployment

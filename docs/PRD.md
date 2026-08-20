@@ -2,13 +2,14 @@
 
 ## LMS / E-Learning Platform (BrilliaMind.id)
 
-**Version:** 1.3  
-**Status:** Draft  
+**Version:** 1.4  
+**Status:** MVP Implemented & Verified  
 **Author:** Coderaulia (Vanaila Digital)  
 **Date:** August 2026  
 **Changelog v1.1:** Stack changed to Supabase + Cloudflare hybrid. Auth.js → Supabase Auth, Socket.io → Supabase Realtime, MeiliSearch → Postgres full-text (v1). R2 confirmed for all media.  
 **Changelog v1.2:** SCORM removed entirely. Resend confirmed as sole email service. PDF generation confirmed client-side only (jsPDF). React-pdf and Nodemailer removed.  
-**Changelog v1.3:** Complete backend architecture migration to Cloudflare Workers (TypeScript + Hono) and Cloudflare D1 (Serverless SQLite at the edge) with Drizzle ORM. Live discussions deferred to v2 in favor of standard REST discussions for v1.
+**Changelog v1.3:** Complete backend architecture migration to Cloudflare Workers (TypeScript + Hono) and Cloudflare D1 (Serverless SQLite at the edge) with Drizzle ORM. Live discussions deferred to v2 in favor of standard REST discussions for v1.  
+**Changelog v1.4:** Core MVP implementation complete: Instructor registration with Superadmin approvals, YouTube curriculum editor, Invitation-only participant onboarding, Learner progression tracking & dashboard, and Web Crypto auth & security layer.
 
 ---
 
