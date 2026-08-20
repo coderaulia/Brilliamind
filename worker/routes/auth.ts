@@ -161,6 +161,17 @@ auth.post('/accept-invite', rateLimit(5, 60), zValidator('json', acceptInviteSch
     return c.json({ error: 'Invitation has expired. Please request a new invitation.' }, 400)
   }
 
+  // Atomic state claim: Transition from 'pending' to 'accepted'
+  const claimResult = await db.update(invitations)
+    .set({ status: 'accepted' })
+    .where(and(eq(invitations.id, invitation.id), eq(invitations.status, 'pending')))
+    .returning({ id: invitations.id })
+    .all()
+
+  if (claimResult.length === 0) {
+    return c.json({ error: 'Invalid or expired invitation token' }, 400)
+  }
+
   // Check if profile already exists
   const existingUser = await db.select().from(profiles).where(eq(profiles.email, invitation.email.toLowerCase())).get()
   const passwordHash = await hashPassword(password)
@@ -185,26 +196,18 @@ auth.post('/accept-invite', rateLimit(5, 60), zValidator('json', acceptInviteSch
     })
   }
 
-  // Auto-enroll in designated courses
+  // Auto-enroll in designated courses (idempotent with ON CONFLICT DO NOTHING)
   if (invitation.courseIds && invitation.courseIds.length > 0) {
     for (const courseId of invitation.courseIds) {
-      const existingEnrollment = await db.select()
-        .from(enrollments)
-        .where(and(eq(enrollments.userId, userId), eq(enrollments.courseId, courseId)))
-        .get()
-
-      if (!existingEnrollment) {
-        await db.insert(enrollments).values({
-          id: generateUuid(),
-          userId,
-          courseId,
-        })
-      }
+      await db.insert(enrollments).values({
+        id: generateUuid(),
+        userId,
+        courseId,
+      }).onConflictDoNothing({
+        target: [enrollments.userId, enrollments.courseId],
+      })
     }
   }
-
-  // Mark invitation accepted
-  await db.update(invitations).set({ status: 'accepted' }).where(eq(invitations.id, invitation.id))
 
   // Issue JWT session
   const jwt = await signJwt(

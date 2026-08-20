@@ -164,25 +164,20 @@ progressRouter.post('/lesson', zValidator('json', toggleLessonSchema), async (c)
   const section = await db.select().from(sections).where(eq(sections.id, lesson.sectionId)).get()
   const courseId = section?.courseId
 
-  const existingProgress = await db.select()
-    .from(userProgress)
-    .where(and(eq(userProgress.userId, user.id), eq(userProgress.lessonId, lessonId)))
-    .get()
-
-  if (existingProgress) {
-    await db.update(userProgress).set({
+  const completedAt = completed ? new Date().toISOString() : null
+  await db.insert(userProgress).values({
+    id: generateUuid(),
+    userId: user.id,
+    lessonId,
+    completed,
+    completedAt,
+  }).onConflictDoUpdate({
+    target: [userProgress.userId, userProgress.lessonId],
+    set: {
       completed,
-      completedAt: completed ? new Date().toISOString() : null,
-    }).where(eq(userProgress.id, existingProgress.id))
-  } else {
-    await db.insert(userProgress).values({
-      id: generateUuid(),
-      userId: user.id,
-      lessonId,
-      completed,
-      completedAt: completed ? new Date().toISOString() : null,
-    })
-  }
+      completedAt,
+    },
+  })
 
   // Check and trigger milestones (50% and 100%)
   if (courseId && completed) {
@@ -286,24 +281,20 @@ progressRouter.post('/watch-log', zValidator('json', watchLogSchema), async (c) 
   const user = c.get('user')
   const db = getDb(c.env.DB)
 
-  const existing = await db.select()
-    .from(videoWatchLogs)
-    .where(and(eq(videoWatchLogs.userId, user.id), eq(videoWatchLogs.lessonId, lessonId)))
-    .get()
-
-  if (existing) {
-    await db.update(videoWatchLogs).set({
+  const updatedAt = new Date().toISOString()
+  await db.insert(videoWatchLogs).values({
+    id: generateUuid(),
+    userId: user.id,
+    lessonId,
+    watchSeconds,
+    updatedAt,
+  }).onConflictDoUpdate({
+    target: [videoWatchLogs.userId, videoWatchLogs.lessonId],
+    set: {
       watchSeconds,
-      updatedAt: new Date().toISOString(),
-    }).where(eq(videoWatchLogs.id, existing.id))
-  } else {
-    await db.insert(videoWatchLogs).values({
-      id: generateUuid(),
-      userId: user.id,
-      lessonId,
-      watchSeconds,
-    })
-  }
+      updatedAt,
+    },
+  })
 
   return c.json({ success: true, watchSeconds })
 })

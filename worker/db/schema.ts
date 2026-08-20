@@ -1,4 +1,4 @@
-import { sqliteTable, text, integer } from 'drizzle-orm/sqlite-core'
+import { sqliteTable, text, integer, uniqueIndex } from 'drizzle-orm/sqlite-core'
 import { sql } from 'drizzle-orm'
 
 // 1. Profiles Table
@@ -83,7 +83,9 @@ export const enrollments = sqliteTable('enrollments', {
   completedAt: text('completed_at'),
   milestone50SentAt: text('milestone_50_sent_at'),
   milestone100SentAt: text('milestone_100_sent_at'),
-})
+}, (table) => [
+  uniqueIndex('enrollments_user_id_course_id_unique').on(table.userId, table.courseId),
+])
 
 // 8. User Progress Table
 export const userProgress = sqliteTable('user_progress', {
@@ -92,7 +94,9 @@ export const userProgress = sqliteTable('user_progress', {
   lessonId: text('lesson_id').notNull().references(() => lessons.id, { onDelete: 'cascade' }),
   completed: integer('completed', { mode: 'boolean' }).notNull().default(false),
   completedAt: text('completed_at'),
-})
+}, (table) => [
+  uniqueIndex('user_progress_user_id_lesson_id_unique').on(table.userId, table.lessonId),
+])
 
 // 9. Video Watch Logs Table
 export const videoWatchLogs = sqliteTable('video_watch_logs', {
@@ -101,7 +105,9 @@ export const videoWatchLogs = sqliteTable('video_watch_logs', {
   lessonId: text('lesson_id').notNull().references(() => lessons.id, { onDelete: 'cascade' }),
   watchSeconds: integer('watch_seconds').notNull().default(0),
   updatedAt: text('updated_at').notNull().default(sql`(CURRENT_TIMESTAMP)`),
-})
+}, (table) => [
+  uniqueIndex('video_watch_logs_user_id_lesson_id_unique').on(table.userId, table.lessonId),
+])
 
 // 10. Quiz Definitions Table
 export const quizDefinitions = sqliteTable('quiz_definitions', {
