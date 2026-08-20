@@ -17,9 +17,10 @@ const STAT_ICONS: IconType[] = [IconBook, IconCheck, IconAward, IconClock]
 interface DashboardPageProps {
   variant?: ThemeVariant
   onOpenCourse?: (id: number) => void
+  onNavToCourses?: () => void
 }
 
-export default function DashboardPage({ variant = 'Deep Navy', onOpenCourse }: DashboardPageProps) {
+export default function DashboardPage({ variant = 'Deep Navy', onOpenCourse, onNavToCourses }: DashboardPageProps) {
   const v = variant === 'Bright Canvas' ? 'B' : 'A'
   const heatScheme = v === 'A' ? 'teal' : 'blue'
 
@@ -52,6 +53,7 @@ export default function DashboardPage({ variant = 'Deep Navy', onOpenCourse }: D
                 You've completed {totalDone} of {totalLessons} lessons across {ENROLLED_COURSES.length} courses
               </p>
               <button
+                onClick={() => onOpenCourse?.(ENROLLED_COURSES[0]?.id || 1)}
                 style={{
                   marginTop: 18, padding: '11px 28px', borderRadius: 10, border: 'none',
                   background: 'rgba(255,255,255,0.12)', color: '#fff', fontSize: 14, fontWeight: 600,
@@ -110,6 +112,7 @@ export default function DashboardPage({ variant = 'Deep Navy', onOpenCourse }: D
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
             <h2 style={{ fontSize: 18, fontWeight: 700, color: 'var(--text-primary)' }}>My Courses</h2>
             <span
+              onClick={onNavToCourses}
               style={{ fontSize: 13, fontWeight: 600, color: 'var(--accent-1)', cursor: 'pointer', transition: 'opacity 0.2s' }}
               onMouseEnter={e => (e.currentTarget.style.opacity = '0.7')}
               onMouseLeave={e => (e.currentTarget.style.opacity = '1')}
