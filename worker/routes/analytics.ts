@@ -42,10 +42,9 @@ analyticsRouter.post('/event', optionalAuthMiddleware, zValidator('json', eventS
     propertiesJson: data.properties || {},
   })
 
-  // Use Cloudflare execution context to write asynchronously without blocking client
-  if (c.executionCtx) {
+  try {
     c.executionCtx.waitUntil(insertPromise)
-  } else {
+  } catch {
     await insertPromise
   }
 

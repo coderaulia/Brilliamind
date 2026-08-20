@@ -18,7 +18,7 @@ app.use('*', async (c, next) => {
         'http://localhost:5173',
         'http://localhost:4173',
         'http://127.0.0.1:5173',
-        c.env.APP_URL || '',
+        c.env?.APP_URL || '',
       ].filter(Boolean)
       return allowedOrigins.includes(origin) || !origin ? origin : allowedOrigins[0]
     },

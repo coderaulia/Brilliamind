@@ -10,6 +10,9 @@
     "preview": "vite preview",
     "lint": "eslint .",
     "type-check": "tsc --noEmit",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:system": "tsx scripts/verify-full-system.ts",
     "db:generate": "drizzle-kit generate",
     "db:migrate:local": "wrangler d1 migrations apply DB -c worker/wrangler.jsonc --local",
     "db:migrate:remote": "wrangler d1 migrations apply DB -c worker/wrangler.jsonc --remote",
@@ -58,9 +61,11 @@
     "globals": "^15.14.0",
     "postcss": "^8.4.49",
     "tailwindcss": "^3.4.17",
+    "tsx": "^4.23.12",
     "typescript": "~5.7.2",
     "typescript-eslint": "^8.18.2",
     "vite": "^6.0.5",
+    "vitest": "^4.1.11",
     "wrangler": "^4.124.0"
   }
 }

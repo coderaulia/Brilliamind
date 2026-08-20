@@ -1,16 +1,21 @@
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787'
+const API_BASE_URL = typeof import.meta !== 'undefined' && import.meta.env?.VITE_API_URL
+  ? import.meta.env.VITE_API_URL
+  : 'http://localhost:8787'
 
 function getAnonymousId(): string {
   try {
-    let anonId = localStorage.getItem('bm_anon_id')
-    if (!anonId) {
-      anonId = 'anon_' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36)
-      localStorage.setItem('bm_anon_id', anonId)
+    if (typeof localStorage !== 'undefined') {
+      let anonId = localStorage.getItem('bm_anon_id')
+      if (!anonId) {
+        anonId = 'anon_' + Math.random().toString(36).substring(2, 15) + Date.now().toString(36)
+        localStorage.setItem('bm_anon_id', anonId)
+      }
+      return anonId
     }
-    return anonId
   } catch {
-    return 'anon_fallback'
+    // ignore storage error
   }
+  return 'anon_fallback'
 }
 
 export interface TelemetryEventPayload {
@@ -31,17 +36,28 @@ export function trackEvent(
   }
 ) {
   try {
+    const currentPath = typeof window !== 'undefined' && window.location ? window.location.pathname : '/'
+    const referrer = typeof document !== 'undefined' ? document.referrer : undefined
+
     const payload = {
       eventType,
       anonymousId: getAnonymousId(),
       courseId: extra?.courseId,
       lessonId: extra?.lessonId,
-      path: window.location.pathname,
-      referrer: document.referrer || undefined,
+      path: currentPath,
+      referrer: referrer || undefined,
       properties: extra?.properties || {},
     }
 
-    const token = localStorage.getItem('bm_token')
+    let token: string | null = null
+    if (typeof localStorage !== 'undefined') {
+      try {
+        token = localStorage.getItem('bm_token')
+      } catch {
+        // ignore
+      }
+    }
+
     const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     }
@@ -49,24 +65,27 @@ export function trackEvent(
       headers['Authorization'] = `Bearer ${token}`
     }
 
-    fetch(`${API_BASE_URL}/api/analytics/event`, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify(payload),
-      keepalive: true,
-    }).catch(() => {
-      // Telemetry failures should never interrupt UI
-    })
+    if (typeof fetch !== 'undefined') {
+      fetch(`${API_BASE_URL}/api/analytics/event`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(payload),
+        keepalive: true,
+      }).catch(() => {
+        // Telemetry failures should never interrupt UI
+      })
+    }
   } catch {
     // Silent fail
   }
 }
 
 export function trackPageView(path: string) {
+  const title = typeof document !== 'undefined' ? document.title : ''
   trackEvent('page_view', {
     properties: {
       path,
-      title: document.title,
+      title,
     },
   })
 }

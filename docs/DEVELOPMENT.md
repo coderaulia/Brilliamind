@@ -147,6 +147,9 @@ pnpm run build               # Type-check + production build (tsc -b && vite bui
 pnpm run preview             # Preview production frontend build
 pnpm run lint                # ESLint code verification
 pnpm run type-check          # tsc --noEmit
+pnpm run test                # Run Vitest test suites (25 unit & integration tests)
+pnpm run test:watch          # Run Vitest in interactive watch mode
+pnpm run test:system         # Run live end-to-end API verification script
 pnpm run db:generate         # Generate D1 SQL migrations from Drizzle schema
 pnpm run db:migrate:local    # Apply migrations locally
 pnpm run deploy:worker       # Deploy Cloudflare Worker to production
