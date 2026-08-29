@@ -166,7 +166,7 @@ export const requireRole = (...roles: ('admin' | 'instructor' | 'learner')[]) =>
   3. On `checkout.session.completed`:
      - Inserts row into `payments` (`status: 'paid'`).
      - Inserts / upserts row into `enrollments`.
-     - Calls internal `sendEmail` helper to dispatch purchase receipt + enrollment confirmation via Resend.
+     - Calls internal `sendEmail` helper to dispatch purchase receipt + enrollment confirmation via Brevo.
   4. Returns `{ received: true }`.
 
 ---
@@ -254,9 +254,9 @@ export const requireRole = (...roles: ('admin' | 'instructor' | 'learner')[]) =>
 
 ---
 
-### 9. Transactional Email Service (`worker/lib/resend.ts`)
+### 9. Transactional Email Service (Brevo)
 
-Direct HTTP call to Resend REST API (`https://api.resend.com/emails`):
+Direct HTTP call to Brevo REST API (`https://api.brevo.com/v3/smtp/email`):
 - `enrollment_confirmation`: Sent when learner enrolls or completes checkout.
 - `quiz_result`: Sent after quiz submission with score summary.
 - `certificate_issued`: Sent with certificate verification link and congratulations.
@@ -273,7 +273,7 @@ Direct HTTP call to Resend REST API (`https://api.resend.com/emails`):
 | `JWT_SECRET` | Secret key used to sign and verify user JWTs |
 | `STRIPE_SECRET_KEY` | Stripe secret API key (`sk_live_...` or `sk_test_...`) |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret (`whsec_...`) |
-| `RESEND_API_KEY` | Resend API key (`re_...`) |
+| `BREVO_API_KEY` | Brevo API key |
 | `EMAIL_FROM` | Verified sender email (e.g., `noreply@brilliamind.id`) |
 | `R2_ACCOUNT_ID` | Cloudflare Account ID for S3 presigning |
 | `R2_ACCESS_KEY_ID` | S3-compatible R2 Access Key ID |

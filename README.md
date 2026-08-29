@@ -2,7 +2,7 @@
 
 Modern, scalable LMS / E-Learning Platform. Built on serverless Cloudflare Edge architecture with TypeScript, React 19, Hono, and Cloudflare D1.
 
-**Stack:** React 19 · Vite · TypeScript · Tailwind CSS · Cloudflare Workers (Hono) · Cloudflare D1 (SQLite) · Cloudflare R2 + Pages · Drizzle ORM · Stripe · Resend
+**Stack:** React 19 · Vite · TypeScript · Tailwind CSS · Cloudflare Workers (Hono) · Cloudflare D1 (SQLite) · Cloudflare R2 + Pages · Drizzle ORM · Brevo
 
 ---
 
@@ -48,7 +48,7 @@ pnpm run dev              # Vite SPA on http://localhost:5173
 
 ## 🧪 Quick Test Credentials (Local Demo)
 
-Click **"Seed Demo DB"** on the [Login Page](http://localhost:5173/login) (or send `POST http://localhost:8787/api/seed`) to initialize demo accounts:
+The local-only seed endpoint is available for development and automated verification. Send `POST http://localhost:8787/api/seed` against a local Worker; it is disabled when `APP_URL` is a production URL. Do not use seeded credentials in production.
 
 | Role | Email | Password | Primary Route | Purpose |
 | :--- | :--- | :--- | :--- | :--- |
@@ -104,7 +104,7 @@ worker/
   routes/           # auth, admin, courses, progress, seed
   middleware/       # JWT auth, role validation, rate limiting
   db/               # Drizzle ORM schema, migrations, SQLite client
-  lib/              # Web Crypto PBKDF2/JWT, Resend email client
+  lib/              # Web Crypto PBKDF2/JWT, Brevo email client
 docs/
   PRD.md            # Product Requirements Document v1.4
   ARCHITECTURE.md   # System topology, folder structure, data flow

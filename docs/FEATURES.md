@@ -4,6 +4,10 @@ Implementation status reflects the current development progress of the BrilliaMi
 
 ---
 
+## MVP Scope (Launch)
+
+Launch is intentionally limited to Phases 1–3: authentication and administration, instructor course studio, invitation-only learner onboarding, course playback, progress tracking, and roster analytics. Payments, certificates, advanced search, and discussions are post-MVP and must not be presented as launch functionality.
+
 ## Progress Summary
 
 - [x] **Scaffold & Build Setup** (React 19, Vite, Tailwind CSS, pnpm, Cloudflare Workers, D1 + Drizzle)
@@ -13,8 +17,8 @@ Implementation status reflects the current development progress of the BrilliaMi
 - [x] **Phase 1: Cloudflare Workers Foundation & Auth** (`worker/routes/auth.ts`, `worker/routes/admin.ts`, Web Crypto PBKDF2, JWT auth, `src/stores/auth.ts`, `LoginPage.tsx`, `InstructorRegisterPage.tsx`, `AcceptInvitePage.tsx`, `ForgotPasswordPage.tsx`, `ResetPasswordPage.tsx`)
 - [x] **Phase 2: Instructor Course Studio & Video Curriculum** (`worker/routes/courses.ts`, `CourseManagerPage.tsx`, `CourseEditorPage.tsx` with YouTube embed player, section & lesson builder)
 - [x] **Phase 3: Learner Engine & Progress Roster** (`worker/routes/progress.ts`, `CoursePlayerPage.tsx` with YouTube/MP4 playback, `CourseAnalyticsPage.tsx` with instructor learner roster, realtime progress tracking)
-- [ ] **Phase 4: Payments & Certificates** (Stripe checkout & webhook on Workers, jsPDF certificate generation, `/verify/:certUuid`)
-- [ ] **Phase 5: Advanced Search & Discussions** (SQLite FTS5 full-text indexing, threaded discussions)
+- [ ] **Phase 4: Payments & Certificates — Post-MVP**
+- [ ] **Phase 5: Advanced Search & Discussions — Post-MVP**
 
 ---
 
@@ -74,4 +78,4 @@ Implementation status reflects the current development progress of the BrilliaMi
 
 - [ ] SQLite FTS5 course and lesson catalog search
 - [ ] REST-based lesson discussion threads & replies
-- [ ] Community Q&A notifications via Resend email
+- [ ] Community Q&A notifications via Brevo email

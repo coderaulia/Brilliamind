@@ -1,5 +1,6 @@
 import { Hono } from 'hono'
 import { cors } from 'hono/cors'
+import { secureHeaders } from 'hono/secure-headers'
 import type { Env, Variables } from './types'
 import auth from './routes/auth'
 import admin from './routes/admin'
@@ -10,7 +11,28 @@ import analyticsRouter from './routes/analytics'
 
 const app = new Hono<{ Bindings: Env; Variables: Variables }>()
 
-// CORS Middleware
+// Security Headers Middleware (OWASP Secure Headers & CSP)
+app.use(
+  '*',
+  secureHeaders({
+    contentSecurityPolicy: {
+      defaultSrc: ["'self'"],
+      scriptSrc: ["'self'"],
+      styleSrc: ["'self'", "'unsafe-inline'", 'https://fonts.googleapis.com'],
+      fontSrc: ["'self'", 'https://fonts.gstatic.com'],
+      imgSrc: ["'self'", 'https://images.unsplash.com', 'https://media.brilliamind.id', 'data:'],
+      frameSrc: ["'self'", 'https://www.youtube.com', 'https://www.youtube-nocookie.com'],
+      connectSrc: ["'self'", 'https://api.stripe.com'],
+    },
+    strictTransportSecurity: 'max-age=31536000; includeSubDomains; preload',
+    xFrameOptions: 'DENY',
+    xContentTypeOptions: 'nosniff',
+    referrerPolicy: 'strict-origin-when-cross-origin',
+    xXssProtection: '1; mode=block',
+  })
+)
+
+// CORS Middleware with strict origin allowlist
 app.use('*', async (c, next) => {
   const corsMiddleware = cors({
     origin: (origin) => {
@@ -20,7 +42,10 @@ app.use('*', async (c, next) => {
         'http://127.0.0.1:5173',
         c.env?.APP_URL || '',
       ].filter(Boolean)
-      return allowedOrigins.includes(origin) || !origin ? origin : allowedOrigins[0]
+      if (!origin || allowedOrigins.includes(origin)) {
+        return origin || allowedOrigins[0]
+      }
+      return null
     },
     allowHeaders: ['Content-Type', 'Authorization'],
     allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
@@ -31,12 +56,14 @@ app.use('*', async (c, next) => {
   return corsMiddleware(c, next)
 })
 
-// Centralized Error Handling
+// Centralized Error Handling (Redact sensitive stack/messages in production)
 app.onError((err, c) => {
   console.error('[WORKER ERROR]', err)
+  const appUrl = c.env?.APP_URL || ''
+  const isDev = appUrl.includes('localhost') || appUrl.includes('127.0.0.1') || !appUrl
   return c.json(
     {
-      error: err.message || 'Internal Server Error',
+      error: isDev ? (err.message || 'Internal Server Error') : 'Internal Server Error',
     },
     500
   )

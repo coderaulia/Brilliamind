@@ -142,5 +142,69 @@ describe('Cloudflare Workers Hono API Integration', () => {
       const res = await app.fetch(req, mockEnv)
       expect(res.status).toBe(401)
     })
+
+    it('emits OWASP recommended security headers on responses', async () => {
+      const req = new Request('http://localhost/api/health')
+      const res = await app.fetch(req, mockEnv)
+
+      expect(res.headers.get('x-frame-options')).toBe('DENY')
+      expect(res.headers.get('x-content-type-options')).toBe('nosniff')
+      expect(res.headers.get('referrer-policy')).toBe('strict-origin-when-cross-origin')
+      expect(res.headers.get('strict-transport-security')).toContain('max-age=31536000')
+      expect(res.headers.get('content-security-policy')).toBeDefined()
+    })
+
+    it('strictly denies unauthorized cross-origin requests via CORS', async () => {
+      const req = new Request('http://localhost/api/health', {
+        headers: {
+          'Origin': 'https://malicious-site.example.com',
+        },
+      })
+      const res = await app.fetch(req, mockEnv)
+      expect(res.headers.get('access-control-allow-origin')).toBeNull()
+    })
+
+    it('permits authorized origins via CORS', async () => {
+      const req = new Request('http://localhost/api/health', {
+        headers: {
+          'Origin': 'http://localhost:5173',
+        },
+      })
+      const res = await app.fetch(req, mockEnv)
+      expect(res.headers.get('access-control-allow-origin')).toBe('http://localhost:5173')
+    })
+
+    it('redacts internal error messages in production environments', async () => {
+      const validJwt = await signJwt(
+        {
+          sub: 'usr-admin-001',
+          email: 'admin@brilliamind.id',
+          name: 'Admin',
+          role: 'admin',
+          status: 'active',
+        },
+        jwtSecret
+      )
+      const prodEnv = {
+        ...mockEnv,
+        APP_URL: 'https://brilliamind.id',
+        DB: {
+          ...createMockD1(),
+          prepare: () => {
+            throw new Error('FATAL: Internal SQLite database connection timeout at sqlite3.c:4821')
+          },
+        },
+      }
+      const req = new Request('http://localhost/api/auth/me', {
+        headers: {
+          'Authorization': `Bearer ${validJwt}`,
+        },
+      })
+      const res = await app.fetch(req, prodEnv)
+      expect(res.status).toBe(500)
+      const json = await res.json() as { error: string }
+      expect(json.error).toBe('Internal Server Error')
+      expect(json.error).not.toContain('SQLite')
+    })
   })
 })

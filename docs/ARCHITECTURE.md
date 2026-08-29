@@ -69,7 +69,7 @@ lms/
 │   ├── routes/                  # Modular endpoints (auth, courses, r2, stripe, quiz, progress, etc.)
 │   ├── middleware/              # JWT auth, role guard, error handler, CORS
 │   ├── db/                      # Drizzle ORM client, schema.ts, migrations/
-│   ├── lib/                     # R2 presigner, Stripe Web Crypto, Resend HTTP client
+│   ├── lib/                     # R2 presigner, Stripe Web Crypto, Brevo HTTP client
 │   └── types.ts                 # Env bindings interface & context variables
 └── ...config files (package.json, vite.config.ts, tailwind.config.ts)
 ```
@@ -117,7 +117,7 @@ Learner → POST /api/stripe/checkout { courseId }
         → Stripe sends POST /api/stripe/webhook (Stripe-Signature header)
         → Cloudflare Worker: verifies signature with Web Crypto
         → Worker: inserts payments row & enrollments row in D1 in a transaction
-        → Worker: dispatches enrollment confirmation & receipt email via Resend
+        → Worker: dispatches enrollment confirmation & receipt email via Brevo
 ```
 
 ### Discussions
@@ -145,7 +145,7 @@ User posts reply
 | PDF Certificates | jsPDF client-side | Instant generation, zero server rendering cost, verified via public API |
 | Search | SQLite FTS5 | Fast edge full-text search built into D1 with zero external services |
 | State Management | Zustand (auth + UI state) | Simple, lightweight, synced with Worker REST endpoints |
-| Email | Resend via HTTP API | Standard REST API callable from edge Workers without Node mailer dependencies |
+| Email | Brevo via HTTP API | Standard REST API callable from edge Workers without Node mailer dependencies |
 
 ---
 

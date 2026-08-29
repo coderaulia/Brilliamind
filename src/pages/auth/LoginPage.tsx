@@ -1,8 +1,8 @@
 import { useState } from 'react'
 import { useNavigate, Link } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth'
-import { api, ApiError } from '@/lib/api'
-import { Sparkles, ArrowRight, AlertCircle, CheckCircle2, ShieldCheck, UserCheck, BookOpen } from 'lucide-react'
+import { ApiError } from '@/lib/api'
+import { Sparkles, ArrowRight, AlertCircle } from 'lucide-react'
 
 export default function LoginPage() {
   const navigate = useNavigate()
@@ -13,7 +13,6 @@ export default function LoginPage() {
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [pendingNotice, setPendingNotice] = useState<string | null>(null)
-  const [seedNotice, setSeedNotice] = useState<string | null>(null)
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -41,24 +40,6 @@ export default function LoginPage() {
     } finally {
       setIsLoading(false)
     }
-  }
-
-  const handleSeedDemo = async () => {
-    setError(null)
-    setIsLoading(true)
-    try {
-      await api.post('/api/seed')
-      setSeedNotice('Demo database seeded successfully! You can now log in with the quick accounts below.')
-    } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to seed database')
-    } finally {
-      setIsLoading(false)
-    }
-  }
-
-  const quickLogin = (demoEmail: string, demoPass: string) => {
-    setEmail(demoEmail)
-    setPassword(demoPass)
   }
 
   return (
@@ -94,13 +75,6 @@ export default function LoginPage() {
                 <p className="font-medium">Account Pending Approval</p>
                 <p className="text-xs text-amber-300/80 mt-1">{pendingNotice}</p>
               </div>
-            </div>
-          )}
-
-          {seedNotice && (
-            <div className="mb-6 p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-start gap-3 text-emerald-300 text-sm">
-              <CheckCircle2 className="w-5 h-5 shrink-0 mt-0.5" />
-              <span>{seedNotice}</span>
             </div>
           )}
 
@@ -166,55 +140,6 @@ export default function LoginPage() {
             </p>
           </div>
 
-          {/* Quick Demo Testing Tools */}
-          <div className="mt-6 pt-6 border-t border-slate-800">
-            <div className="flex items-center justify-between mb-3">
-              <span className="text-[11px] font-semibold uppercase tracking-wider text-slate-400">
-                Demo Quick Logins
-              </span>
-              <button
-                type="button"
-                onClick={handleSeedDemo}
-                className="text-[11px] text-indigo-400 hover:underline"
-              >
-                Seed Demo DB
-              </button>
-            </div>
-            <div className="grid grid-cols-3 gap-2">
-              <button
-                type="button"
-                onClick={() => quickLogin('admin@brilliamind.id', 'Admin123!')}
-                className="p-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-left text-xs transition-colors"
-              >
-                <div className="flex items-center gap-1.5 text-indigo-300 font-medium">
-                  <ShieldCheck className="w-3.5 h-3.5" /> Admin
-                </div>
-                <div className="text-[10px] text-slate-500 truncate mt-0.5">admin@brillia...</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => quickLogin('sarah.mitchell@brilliamind.id', 'Instructor123!')}
-                className="p-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-left text-xs transition-colors"
-              >
-                <div className="flex items-center gap-1.5 text-purple-300 font-medium">
-                  <UserCheck className="w-3.5 h-3.5" /> Instructor
-                </div>
-                <div className="text-[10px] text-slate-500 truncate mt-0.5">sarah.mitchell@...</div>
-              </button>
-
-              <button
-                type="button"
-                onClick={() => quickLogin('budi.santoso@brilliamind.id', 'Learner123!')}
-                className="p-2 rounded-lg bg-slate-900/80 hover:bg-slate-800 border border-slate-800 text-left text-xs transition-colors"
-              >
-                <div className="flex items-center gap-1.5 text-emerald-300 font-medium">
-                  <BookOpen className="w-3.5 h-3.5" /> Learner
-                </div>
-                <div className="text-[10px] text-slate-500 truncate mt-0.5">budi.santoso@...</div>
-              </button>
-            </div>
-          </div>
         </div>
       </div>
     </div>

@@ -6,8 +6,8 @@
 **Status:** MVP Implemented & Verified  
 **Author:** Coderaulia (Vanaila Digital)  
 **Date:** August 2026  
-**Changelog v1.1:** Stack changed to Supabase + Cloudflare hybrid. Auth.js → Supabase Auth, Socket.io → Supabase Realtime, MeiliSearch → Postgres full-text (v1). R2 confirmed for all media.  
-**Changelog v1.2:** SCORM removed entirely. Resend confirmed as sole email service. PDF generation confirmed client-side only (jsPDF). React-pdf and Nodemailer removed.  
+**Changelog v1.1:** The former hybrid architecture was removed in favor of a unified Cloudflare stack.  
+**Changelog v1.2:** SCORM removed entirely. Brevo confirmed as the transactional email service. PDF generation remains post-MVP.  
 **Changelog v1.3:** Complete backend architecture migration to Cloudflare Workers (TypeScript + Hono) and Cloudflare D1 (Serverless SQLite at the edge) with Drizzle ORM. Live discussions deferred to v2 in favor of standard REST discussions for v1.  
 **Changelog v1.4:** Core MVP implementation complete: Instructor registration with Superadmin approvals, YouTube curriculum editor, Invitation-only participant onboarding, Learner progression tracking & dashboard, and Web Crypto auth & security layer.
 
@@ -25,7 +25,7 @@
 | D   | Media Storage + CDN    | Cloudflare R2 (zero egress)    | Free 10GB → pay-as-you-go | https://developers.cloudflare.com/r2                       |
 | E   | Frontend Hosting       | Cloudflare Pages               | Free                      | https://pages.cloudflare.com                               |
 | F   | Search (v1)            | SQLite FTS5 Full-Text Search   | Included in D1            | https://www.sqlite.org/fts5.html                           |
-| G   | Email                  | Resend                         | Free tier                 | https://resend.com                                         |
+| G   | Email                  | Brevo                          | Free tier                 | https://www.brevo.com                                      |
 | H   | Payments (Global)      | Stripe                         | Free SDK                  | https://stripe.com/docs                                    |
 
 ### Frontend / Feature Libraries
@@ -46,12 +46,12 @@
 
 | Removed                         | Replaced By                    | Reason                                                     |
 | ------------------------------- | ------------------------------ | ---------------------------------------------------------- |
-| Supabase Edge Functions (Deno)  | Cloudflare Workers (Hono / TS) | Unified edge compute with R2/D1 native bindings            |
-| Supabase Postgres + RLS         | Cloudflare D1 + Drizzle ORM    | Native serverless SQLite at edge, zero connection poolers |
-| Supabase Auth                   | Cloudflare Worker JWT Auth     | Self-contained edge auth with Web Crypto                   |
-| Supabase Realtime               | REST (v1) / WebSockets (v2)    | Simplified v1 discussions, realtime planned for v2         |
+| Former edge functions          | Cloudflare Workers (Hono / TS) | Unified edge compute with R2/D1 native bindings            |
+| Former hosted Postgres + RLS   | Cloudflare D1 + Drizzle ORM    | Native serverless SQLite at edge, zero connection poolers |
+| Former managed authentication  | Cloudflare Worker JWT Auth     | Self-contained edge auth with Web Crypto                  |
+| Former realtime transport      | REST (v1) / WebSockets (v2)    | Simplified v1 discussions, realtime planned for v2         |
 | Postgres tsvector               | SQLite FTS5                    | Built-in D1 full-text search index                         |
-| SCORM Again / Nodemailer        | Resend                         | Pure HTTP API, zero server overhead                        |
+| SCORM Again / Nodemailer        | Brevo                          | Pure HTTP API, zero server overhead                        |
 
 ---
 
@@ -66,7 +66,7 @@
 - Backend: Cloudflare Workers (Hono framework) exposing typed REST API (`/api/*`)
 - Database: Cloudflare D1 (SQLite) with Drizzle ORM
 - Media: Cloudflare R2 with public bucket + CDN (zero egress)
-- Email: Resend via Worker HTTP client
+- Email: Brevo via Worker HTTP client
 
 ---
 
@@ -135,9 +135,9 @@ Role enforcement: Cloudflare Worker JWT authentication middleware and `profiles.
 - *(Real-time WebSocket / SSE sync planned for v2)*.
 
 ### 4.8 Notifications (Email)
-**Service:** Resend via Cloudflare Workers
+**Service:** Brevo via Cloudflare Workers
 - Triggered on enrollment confirmation, quiz results, certificate issuance, and payment receipt.
-- Direct REST calls to Resend API (`https://api.resend.com/emails`).
+- Direct REST calls to Brevo API (`https://api.brevo.com/v3/smtp/email`).
 
 ### 4.9 Search
 **Service:** SQLite FTS5 on Cloudflare D1
@@ -196,17 +196,18 @@ courses_fts         — SQLite FTS5 virtual table
 ## 7. MVP Scope (v1)
 
 **v1 includes:**
-- Cloudflare Workers API with JWT Auth (email + Google OAuth).
-- Course authoring: text (Tiptap) / video (R2 + Video.js) / YouTube embed (Plyr) / quiz (SurveyJS).
-- Video watch progress & checklist tracking.
-- Quiz auto-grading with authoritative server-side verification.
-- Learner progress dashboard & certificates (jsPDF + `/verify/:certUuid`).
-- Free enrollment & Stripe paid checkout.
-- Resend email notifications from Worker.
-- Lesson discussions (REST).
-- Course search via SQLite FTS5.
+- Cloudflare Workers API with JWT Auth (email/password).
+- Instructor registration and admin approval.
+- Course authoring with structured sections and YouTube lessons.
+- Invitation-only learner onboarding and password reset.
+- YouTube course playback, lesson completion, and progress tracking.
+- Learner progress dashboard and instructor learner roster analytics.
+- Brevo email notifications from Worker.
 
-**v2 defers:**
+**Post-MVP defers:**
+- Stripe payments and checkout.
+- Certificate issuance, PDF export, and public verification.
+- Advanced search and lesson discussions.
 - Live sessions calendar (React Big Calendar).
 - Live Realtime discussions (WebSockets / Durable Objects).
 - Midtrans payment gateway.
@@ -225,7 +226,7 @@ courses_fts         — SQLite FTS5 virtual table
 | Database    | Cloudflare D1 (SQLite) + Drizzle ORM   |
 | Storage/CDN | Cloudflare R2                          |
 | Search      | SQLite FTS5 on D1                      |
-| Email       | Resend                                 |
+| Email       | Brevo                                  |
 | Payments    | Stripe                                 |
 
 ---

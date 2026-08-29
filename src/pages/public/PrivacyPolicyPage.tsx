@@ -65,7 +65,7 @@ export default function PrivacyPolicyPage() {
           <ul className="list-disc pl-5 space-y-2 text-slate-300">
             <li><strong>Service Delivery:</strong> To deliver video lectures, verify quiz results, and calculate course progress percentages.</li>
             <li><strong>Account Administration:</strong> To authenticate credentials, manage role permissions, and process instructor approval applications.</li>
-            <li><strong>Transactional Communications:</strong> To send email invitations, password reset links, and course enrollment confirmations via Resend.</li>
+            <li><strong>Transactional Communications:</strong> To send email invitations, password reset links, and course enrollment confirmations via Brevo.</li>
             <li><strong>Credential Verification:</strong> To provide public verification links for earned certificates (<code className="text-indigo-300">/verify/:certUuid</code>).</li>
             <li><strong>Security & Abuse Prevention:</strong> To enforce rate limits, detect fraudulent attempts, and safeguard platform integrity.</li>
           </ul>
@@ -100,7 +100,7 @@ export default function PrivacyPolicyPage() {
           <ul className="list-disc pl-5 space-y-1.5 text-xs text-slate-400">
             <li><a href="https://policies.google.com/privacy" target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline">Google / YouTube Privacy Policy</a></li>
             <li><a href="https://vimeo.com/privacy" target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline">Vimeo Privacy Policy</a></li>
-            <li><a href="https://resend.com/legal/privacy-policy" target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline">Resend Privacy Policy</a></li>
+            <li><a href="https://www.brevo.com/legal/privacypolicy/" target="_blank" rel="noreferrer" className="text-indigo-400 hover:underline">Brevo Privacy Policy</a></li>
           </ul>
         </section>
 

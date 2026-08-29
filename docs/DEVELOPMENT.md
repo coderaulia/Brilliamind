@@ -33,7 +33,7 @@ pnpm run dev              # Vite SPA on http://localhost:5173
 
 ## Quick Test Credentials (Local Seed)
 
-Click **"Seed Demo DB"** on the [Login Page](http://localhost:5173/login) (or send `POST http://localhost:8787/api/seed`) to initialize demo accounts:
+The local-only seed endpoint is available for development and automated verification. Send `POST http://localhost:8787/api/seed` against a local Worker. It is disabled when `APP_URL` is a production URL, and seeded credentials must never be used in production.
 
 | Role | Email | Password | Primary Route | Purpose |
 | :--- | :--- | :--- | :--- | :--- |
@@ -60,7 +60,7 @@ Click **"Seed Demo DB"** on the [Login Page](http://localhost:5173/login) (or se
 | `JWT_SECRET` | Secret key used to sign and verify user JWTs (Web Crypto HMAC-SHA256) |
 | `STRIPE_SECRET_KEY` | Stripe secret API key |
 | `STRIPE_WEBHOOK_SECRET` | Stripe webhook signing secret |
-| `RESEND_API_KEY` | Resend API key for transactional emails |
+| `BREVO_API_KEY` | Brevo API key for transactional emails |
 | `EMAIL_FROM` | Sender email (`noreply@brilliamind.id`) |
 | `APP_URL` | App base URL for invitation and password reset links |
 | `R2_PUBLIC_URL` | Cloudflare R2 public bucket base URL |
