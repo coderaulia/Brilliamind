@@ -3,6 +3,7 @@ import { eq } from 'drizzle-orm'
 import type { Env, Variables } from '../types'
 import { getDb, profiles, courses, sections, lessons, enrollments } from '../db'
 import { hashPassword, generateUuid } from '../lib/crypto'
+import { vanailaInstructor, vanailaCourses } from '../db/seeds/vanaila-seed-data'
 
 const seedRouter = new Hono<{ Bindings: Env; Variables: Variables }>()
 
@@ -162,9 +163,62 @@ seedRouter.post('/', async (c) => {
     })
   }
 
+  // 6. Seed "Vanaila Course" Instructor & Training Series
+  const vanailaExisting = await db.select().from(profiles).where(eq(profiles.id, vanailaInstructor.id)).get()
+  const vanailaPasswordHash = await hashPassword('Vanaila123!')
+  if (!vanailaExisting) {
+    await db.insert(profiles).values({
+      ...vanailaInstructor,
+      passwordHash: vanailaPasswordHash,
+    })
+  }
+
+  for (const courseData of vanailaCourses) {
+    const existing = await db.select().from(courses).where(eq(courses.id, courseData.id)).get()
+    if (!existing) {
+      await db.insert(courses).values({
+        id: courseData.id,
+        instructorId: vanailaInstructor.id,
+        title: courseData.title,
+        slug: courseData.slug,
+        description: courseData.description,
+        coverUrl: courseData.coverUrl,
+        category: courseData.category,
+        tags: courseData.tags,
+        price: 0,
+        currency: 'USD',
+        status: 'published',
+      })
+
+      await db.insert(sections).values({
+        id: courseData.section.id,
+        courseId: courseData.id,
+        title: courseData.section.title,
+        position: courseData.section.position,
+      })
+
+      const batchSize = 25
+      for (let i = 0; i < courseData.section.lessons.length; i += batchSize) {
+        const batch = courseData.section.lessons.slice(i, i + batchSize).map((l) => ({
+          id: l.id,
+          sectionId: courseData.section.id,
+          title: l.title,
+          type: l.type,
+          videoUrl: l.videoUrl,
+          position: l.position,
+          isFreePreview: l.isFreePreview,
+        }))
+        await db.insert(lessons).values(batch)
+      }
+    }
+  }
+
   return c.json({
-    message: 'Database seeded successfully with demo users and course!',
+    message: 'Database seeded successfully with demo users, Vanaila Course training series, and lessons!',
     seededRoles: ['admin', 'instructor', 'learner'],
+    seededInstructor: vanailaInstructor.name,
+    vanailaCoursesCount: vanailaCourses.length,
+    vanailaLessonsCount: vanailaCourses.reduce((sum, c) => sum + c.section.lessons.length, 0),
   })
 })
 
