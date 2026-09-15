@@ -60,7 +60,9 @@ export default function CoursePlayerPage({ courseId, onBack }: CoursePlayerPageP
   ])
 
   // Discussions State
-  const [discussions, setDiscussions] = useState<DiscussionComment[]>(MOCK_DISCUSSIONS)
+  const [discussions, setDiscussions] = useState<DiscussionComment[]>(
+    course.discussions && course.discussions.length > 0 ? course.discussions : MOCK_DISCUSSIONS
+  )
 
   const currentIndex = allLessons.findIndex((item) => item.lesson.id === currentLessonId)
   const currentItem = allLessons[currentIndex] || allLessons[0]
@@ -283,6 +285,10 @@ export default function CoursePlayerPage({ courseId, onBack }: CoursePlayerPageP
             discussions={discussions}
             onAddQuestion={handleAddQuestion}
             onToggleUpvote={handleToggleUpvote}
+            channelTitle={course.channelTitle}
+            channelUrl={course.channelUrl}
+            credits={course.credits}
+            resources={course.resources}
           />
 
           {/* Bottom Lesson Navigation Bar */}

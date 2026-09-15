@@ -10,6 +10,10 @@ interface PlayerTabsProps {
   discussions: DiscussionComment[]
   onAddQuestion: (content: string) => void
   onToggleUpvote: (commentId: string) => void
+  channelTitle?: string
+  channelUrl?: string
+  credits?: string
+  resources?: { title: string; size: string; downloadUrl?: string }[]
 }
 
 export default function PlayerTabs({
@@ -20,6 +24,10 @@ export default function PlayerTabs({
   discussions,
   onAddQuestion,
   onToggleUpvote,
+  channelTitle,
+  channelUrl,
+  credits,
+  resources,
 }: PlayerTabsProps) {
   const [activeTab, setActiveTab] = useState<'overview' | 'discussion' | 'resources'>('overview')
   const [newNoteText, setNewNoteText] = useState('')
@@ -83,9 +91,79 @@ export default function PlayerTabs({
             <h3 style={{ fontSize: 18, fontWeight: 800, marginBottom: 8, color: 'var(--text-primary)' }}>
               About this lesson
             </h3>
-            <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 24 }}>
+            <p style={{ fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6, marginBottom: 20 }}>
               {courseDescription}
             </p>
+
+            {/* Channel Credits & Attribution Banner */}
+            {channelTitle && (
+              <div
+                style={{
+                  background: 'var(--card-bg)',
+                  borderRadius: 14,
+                  border: '1px solid var(--card-border)',
+                  padding: '16px 20px',
+                  marginBottom: 24,
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'space-between',
+                  gap: 16,
+                }}
+              >
+                <div>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+                    <span
+                      style={{
+                        padding: '2px 8px',
+                        borderRadius: 6,
+                        background: '#ef4444',
+                        color: '#fff',
+                        fontSize: 10,
+                        fontWeight: 800,
+                        letterSpacing: '0.04em',
+                      }}
+                    >
+                      YouTube
+                    </span>
+                    <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
+                      Source Channel:{' '}
+                      <a
+                        href={channelUrl || 'https://www.youtube.com/@VanailaCourse'}
+                        target="_blank"
+                        rel="noreferrer"
+                        style={{ color: 'var(--accent-1)', textDecoration: 'none' }}
+                      >
+                        {channelTitle} ↗
+                      </a>
+                    </span>
+                  </div>
+                  <p style={{ fontSize: 12, color: 'var(--text-muted)', lineHeight: 1.5, margin: 0 }}>
+                    {credits ||
+                      'Educational lessons curated from the public YouTube channel. All intellectual rights and credits belong to the original author and content producers.'}
+                  </p>
+                </div>
+                {channelUrl && (
+                  <a
+                    href={channelUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    style={{
+                      padding: '8px 14px',
+                      borderRadius: 10,
+                      background: 'rgba(239,68,68,0.1)',
+                      color: '#ef4444',
+                      border: '1px solid rgba(239,68,68,0.2)',
+                      fontSize: 12,
+                      fontWeight: 600,
+                      textDecoration: 'none',
+                      whiteSpace: 'nowrap',
+                    }}
+                  >
+                    Visit Channel
+                  </a>
+                )}
+              </div>
+            )}
 
             {/* Personal Notes Box */}
             <div
@@ -334,13 +412,16 @@ export default function PlayerTabs({
         {activeTab === 'resources' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <div style={{ fontSize: 14, color: 'var(--text-secondary)', marginBottom: 8 }}>
-              Course assets, templates, and slide decks available for offline study:
+              Course workbooks, practice templates, and cheat sheets available for offline study:
             </div>
-            {[
-              { name: 'Complete_UX_Design_Handbook_v2.pdf', size: '14.2 MB' },
-              { name: 'Jakob_Nielsen_Heuristics_Cheatsheet.png', size: '2.4 MB' },
-              { name: 'Wireframing_UI_Kit_Components.fig', size: '8.8 MB' },
-            ].map((f, i) => (
+            {(resources && resources.length > 0
+              ? resources.map((r) => ({ name: r.title, size: r.size }))
+              : [
+                  { name: 'Complete_Training_Reference_Guide.pdf', size: '14.2 MB' },
+                  { name: 'Core_Concepts_&_Shortcuts_Cheatsheet.png', size: '2.4 MB' },
+                  { name: 'Hands_On_Practice_Worksheets.xlsx', size: '8.8 MB' },
+                ]
+            ).map((f, i) => (
               <div
                 key={i}
                 style={{

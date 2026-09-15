@@ -89,15 +89,24 @@ export default function VideoPlayerStage({ videoUrl, onComplete }: VideoPlayerSt
     return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}`
   }
 
-  const isYouTube = Boolean(videoUrl && (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be')))
+  const isYouTube = Boolean(
+    videoUrl && (videoUrl.includes('youtube.com') || videoUrl.includes('youtu.be'))
+  )
   const getEmbedUrl = (url: string) => {
     if (!url) return ''
+    if (url.includes('youtube.com/embed/')) {
+      return url.includes('?') ? url : `${url}?autoplay=1&enablejsapi=1`
+    }
     if (url.includes('youtube.com/watch?v=')) {
       const vidId = url.split('v=')[1]?.split('&')[0]
       return `https://www.youtube.com/embed/${vidId}?autoplay=1&enablejsapi=1`
     }
     if (url.includes('youtu.be/')) {
       const vidId = url.split('youtu.be/')[1]?.split('?')[0]
+      return `https://www.youtube.com/embed/${vidId}?autoplay=1&enablejsapi=1`
+    }
+    if (url.includes('youtube.com/shorts/')) {
+      const vidId = url.split('shorts/')[1]?.split('?')[0]?.split('&')[0]
       return `https://www.youtube.com/embed/${vidId}?autoplay=1&enablejsapi=1`
     }
     return url

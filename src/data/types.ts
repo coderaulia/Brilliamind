@@ -20,6 +20,11 @@ export interface Course {
   whatYouWillLearn?: string[]
   requirements?: string[]
   modules?: CourseModule[]
+  channelTitle?: string
+  channelUrl?: string
+  credits?: string
+  discussions?: DiscussionComment[]
+  resources?: { title: string; size: string; downloadUrl: string }[]
 }
 
 export type LessonType = 'video' | 'article' | 'quiz' | 'resource'
