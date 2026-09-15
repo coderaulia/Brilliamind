@@ -127,6 +127,77 @@ export const SALES_DISCUSSIONS: DiscussionComment[] = [
       },
     ],
   },
+  {
+    id: 'disc-sl-2',
+    authorName: 'Dewi Lestari',
+    authorAvatar: 'DL',
+    authorRole: 'Learner',
+    createdAt: 'Yesterday',
+    content:
+      'How do you filter high-potential winning products in Kalodata without getting overwhelmed by saturated items?',
+    upvotes: 7,
+    hasUpvoted: false,
+    replies: [
+      {
+        id: 'disc-sl-2-rep',
+        authorName: 'Derek Kumo',
+        authorAvatar: 'DK',
+        authorRole: 'Instructor',
+        createdAt: '16 hours ago',
+        content:
+          'Set your filter to products with GMV increasing over 50% in the last 7 days but with fewer than 20 active creator videos! That gives you early entry before mainstream affiliate competition spikes.',
+        upvotes: 11,
+      },
+    ],
+  },
+]
+
+export const PM_DISCUSSIONS: DiscussionComment[] = [
+  {
+    id: 'disc-pm-1',
+    authorName: 'Rian Pratama',
+    authorAvatar: 'RP',
+    authorRole: 'Learner',
+    createdAt: '2 hours ago',
+    content:
+      'When managing project schedules in Excel, what is the cleanest formula to calculate dynamic end dates excluding both national holidays and weekend variations?',
+    upvotes: 11,
+    hasUpvoted: true,
+    replies: [
+      {
+        id: 'disc-pm-1-rep',
+        authorName: 'Engineeringly',
+        authorAvatar: 'EN',
+        authorRole: 'Instructor',
+        createdAt: '45 min ago',
+        content:
+          'Always use WORKDAY.INTL(start_date, days, [weekend_code], [holidays_range])! The weekend_code parameter lets you customize non-working days (like Friday/Saturday or Sunday only), and passing a named range for holidays keeps your formulas clean and dynamic.',
+        upvotes: 15,
+      },
+    ],
+  },
+  {
+    id: 'disc-pm-2',
+    authorName: 'Farah Anindita',
+    authorAvatar: 'FA',
+    authorRole: 'Learner',
+    createdAt: 'Yesterday',
+    content:
+      'How do I calculate Schedule Performance Index (SPI) and Cost Performance Index (CPI) dynamically in an Excel S-curve dashboard?',
+    upvotes: 8,
+    replies: [
+      {
+        id: 'disc-pm-2-rep',
+        authorName: 'Project Management Application',
+        authorAvatar: 'PM',
+        authorRole: 'Instructor',
+        createdAt: '20 hours ago',
+        content:
+          'SPI = EV / PV (Earned Value divided by Planned Value) and CPI = EV / AC (Earned Value divided by Actual Cost). Use conditional formatting with custom icons (green circle for >= 1.0, yellow for 0.9–0.99, red for < 0.9) to alert stakeholders instantly.',
+        upvotes: 12,
+      },
+    ],
+  },
 ]
 
 export const EXCEL_RESOURCES = [
@@ -141,6 +212,15 @@ export const SHEETS_RESOURCES = [
 ]
 
 export const SALES_RESOURCES = [
+  { title: 'TikTok_Shop_Affiliate_Winning_Product_Scorecard.xlsx', size: '3.4 MB', downloadUrl: '#' },
+  { title: 'Kalodata_Competitor_Analysis_Tracker.xlsx', size: '2.9 MB', downloadUrl: '#' },
   { title: 'Dynamic_Sales_&_Marketing_KPI_Dashboard_Template.xlsx', size: '5.2 MB', downloadUrl: '#' },
-  { title: 'Executive_Financial_Summary_Template.xlsx', size: '2.8 MB', downloadUrl: '#' },
 ]
+
+export const PM_RESOURCES = [
+  { title: 'Advanced_Project_Gantt_&_Schedule_Template.xlsx', size: '4.8 MB', downloadUrl: '#' },
+  { title: 'RAIDD_Log_&_Risk_Matrix_Framework.xlsx', size: '3.2 MB', downloadUrl: '#' },
+  { title: 'Earned_Value_Management_EVM_Calculator.xlsx', size: '2.5 MB', downloadUrl: '#' },
+  { title: 'Project_Budget_Time_&_Materials_Tracker.xlsx', size: '1.9 MB', downloadUrl: '#' },
+]
+

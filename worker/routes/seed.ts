@@ -190,35 +190,44 @@ seedRouter.post('/', async (c) => {
         status: 'published',
       })
 
-      await db.insert(sections).values({
-        id: courseData.section.id,
-        courseId: courseData.id,
-        title: courseData.section.title,
-        position: courseData.section.position,
-      })
+      const sectionsList = courseData.sections || (courseData.section ? [courseData.section] : [])
+      for (const sec of sectionsList) {
+        await db.insert(sections).values({
+          id: sec.id,
+          courseId: courseData.id,
+          title: sec.title,
+          position: sec.position,
+        })
 
-      const batchSize = 25
-      for (let i = 0; i < courseData.section.lessons.length; i += batchSize) {
-        const batch = courseData.section.lessons.slice(i, i + batchSize).map((l) => ({
-          id: l.id,
-          sectionId: courseData.section.id,
-          title: l.title,
-          type: l.type,
-          videoUrl: l.videoUrl,
-          position: l.position,
-          isFreePreview: l.isFreePreview,
-        }))
-        await db.insert(lessons).values(batch)
+        const batchSize = 10
+        for (let i = 0; i < sec.lessons.length; i += batchSize) {
+          const batch = sec.lessons.slice(i, i + batchSize).map((l) => ({
+            id: l.id,
+            sectionId: sec.id,
+            title: l.title,
+            type: l.type,
+            videoUrl: l.videoUrl,
+            position: l.position,
+            isFreePreview: l.isFreePreview,
+          }))
+          await db.insert(lessons).values(batch)
+        }
       }
     }
   }
+
+  const totalLessonsCount = vanailaCourses.reduce((sum, c) => {
+    if (c.sections) return sum + c.sections.reduce((s, sec) => s + sec.lessons.length, 0)
+    if (c.section) return sum + c.section.lessons.length
+    return sum
+  }, 0)
 
   return c.json({
     message: 'Database seeded successfully with demo users, Vanaila Course training series, and lessons!',
     seededRoles: ['admin', 'instructor', 'learner'],
     seededInstructor: vanailaInstructor.name,
     vanailaCoursesCount: vanailaCourses.length,
-    vanailaLessonsCount: vanailaCourses.reduce((sum, c) => sum + c.section.lessons.length, 0),
+    vanailaLessonsCount: totalLessonsCount,
   })
 })
 

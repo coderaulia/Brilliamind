@@ -301,7 +301,7 @@ export const CATALOG_COURSES: Course[] = [
 
 export const ENROLLED_COURSES = CATALOG_COURSES.filter((c) => c.enrolled)
 
-export const CATEGORIES = ['All', 'Design', 'Development', 'Analytics', 'Business', 'Excel', 'Spreadsheet', 'Sales']
+export const CATEGORIES = ['All', 'Design', 'Development', 'Analytics', 'Business', 'Excel', 'Spreadsheet', 'Sales', 'Project Management']
 export const LEVELS = ['All Levels', 'Beginner', 'Intermediate', 'Advanced']
 
 export const ACTIVITIES: Activity[] = [

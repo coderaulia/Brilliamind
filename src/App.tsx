@@ -15,6 +15,7 @@ import ResetPasswordPage from '@/pages/auth/ResetPasswordPage'
 
 // Admin Pages
 import AdminDashboardPage from '@/pages/admin/AdminDashboardPage'
+import AdminAnalyticsPage from '@/pages/admin/AdminAnalyticsPage'
 
 // Instructor Pages
 import CourseManagerPage from '@/pages/instructor/CourseManagerPage'
@@ -36,12 +37,12 @@ import TermsOfServicePage from '@/pages/public/TermsOfServicePage'
 import FAQPage from '@/pages/public/FAQPage'
 import DataSafetyPage from '@/pages/public/DataSafetyPage'
 import CourseDetailModal from '@/components/course/CourseDetailModal'
-import { CATALOG_COURSES } from '@/data/mock-data'
+import { useLiveCourses, useLiveCourseDetail } from '@/hooks/useLiveCourses'
 
 function StandaloneCoursePlayer() {
   const { courseId } = useParams<{ courseId: string }>()
   const navigate = useNavigate()
-  const id = Number(courseId) || 1
+  const id = courseId || 'crs-web-dev-001'
 
   return <CoursePlayerPage courseId={id} onBack={() => navigate('/dashboard')} />
 }
@@ -49,11 +50,14 @@ function StandaloneCoursePlayer() {
 function LearnerApp() {
   const [activePage, setActivePage] = useState<PageId>('dashboard')
   const { variant, setVariant } = useTheme('Deep Navy')
-  const [activePlayerCourseId, setActivePlayerCourseId] = useState<number | null>(null)
-  const [inspectCourseId, setInspectCourseId] = useState<number | null>(null)
+  const [activePlayerCourseId, setActivePlayerCourseId] = useState<string | number | null>(null)
+  const [inspectCourseId, setInspectCourseId] = useState<string | number | null>(null)
 
-  const handleOpenCourse = (courseId: number) => {
-    const course = CATALOG_COURSES.find(c => c.id === courseId)
+  const { courses, enrollCourse } = useLiveCourses()
+  const { course: inspectingCourse } = useLiveCourseDetail(inspectCourseId)
+
+  const handleOpenCourse = (courseId: string | number) => {
+    const course = courses.find(c => String(c.id) === String(courseId))
     if (course?.enrolled) {
       setActivePlayerCourseId(courseId)
     } else {
@@ -69,8 +73,6 @@ function LearnerApp() {
       />
     )
   }
-
-  const inspectingCourse = inspectCourseId ? CATALOG_COURSES.find(c => c.id === inspectCourseId) : null
 
   const renderPage = () => {
     switch (activePage) {
@@ -113,7 +115,8 @@ function LearnerApp() {
         <CourseDetailModal
           course={inspectingCourse}
           onClose={() => setInspectCourseId(null)}
-          onStartLearning={(id) => {
+          onStartLearning={async (id) => {
+            await enrollCourse(id)
             setInspectCourseId(null)
             setActivePlayerCourseId(id)
           }}
@@ -216,6 +219,14 @@ export default function App() {
           element={
             <ProtectedAdminRoute>
               <AdminDashboardPage />
+            </ProtectedAdminRoute>
+          }
+        />
+        <Route
+          path="/admin/analytics"
+          element={
+            <ProtectedAdminRoute>
+              <AdminAnalyticsPage />
             </ProtectedAdminRoute>
           }
         />

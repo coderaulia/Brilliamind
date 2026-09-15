@@ -32,6 +32,9 @@ export interface Env {
   R2_BUCKET?: string
   R2_PUBLIC_URL?: string
   APP_URL?: string
+  CLOUDFLARE_API_TOKEN?: string
+  CLOUDFLARE_ZONE_ID?: string
+  CLOUDFLARE_ACCOUNT_ID?: string
 }
 
 export interface Variables {

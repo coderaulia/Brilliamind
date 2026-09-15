@@ -1,6 +1,5 @@
 import { useState, useEffect } from 'react'
 import {
-  CATALOG_COURSES,
   MOCK_DISCUSSIONS,
   type Lesson,
   type CourseModule,
@@ -14,15 +13,16 @@ import QuizRunnerStage from '@/components/player/QuizRunnerStage'
 import ResourceDownloadStage from '@/components/player/ResourceDownloadStage'
 import PlayerTabs from '@/components/player/PlayerTabs'
 import SyllabusSidebar from '@/components/player/SyllabusSidebar'
+import { useLiveCourseDetail } from '@/hooks/useLiveCourses'
+import { api } from '@/lib/api'
 
 interface CoursePlayerPageProps {
-  courseId: number
+  courseId: string | number
   onBack: () => void
 }
 
 export default function CoursePlayerPage({ courseId, onBack }: CoursePlayerPageProps) {
-  const course = CATALOG_COURSES.find((c) => c.id === courseId) || CATALOG_COURSES[0]
-  const modules = course.modules ?? []
+  const { course, modules, loading } = useLiveCourseDetail(courseId)
 
   // Flatten lessons for navigation
   const allLessons: { lesson: Lesson; module: CourseModule }[] = []
@@ -32,14 +32,19 @@ export default function CoursePlayerPage({ courseId, onBack }: CoursePlayerPageP
     })
   })
 
-  const [currentLessonId, setCurrentLessonId] = useState<string>(allLessons[0]?.lesson.id || 'l1-1')
-  const [completedLessons, setCompletedLessons] = useState<Record<string, boolean>>(() => {
-    const initial: Record<string, boolean> = {}
-    allLessons.forEach((item) => {
-      if (item.lesson.completed) initial[item.lesson.id] = true
-    })
-    return initial
-  })
+  const [currentLessonId, setCurrentLessonId] = useState<string>('')
+  const [completedLessons, setCompletedLessons] = useState<Record<string, boolean>>({})
+
+  useEffect(() => {
+    if (allLessons.length > 0 && !currentLessonId) {
+      setCurrentLessonId(allLessons[0].lesson.id)
+      const initial: Record<string, boolean> = {}
+      allLessons.forEach((item) => {
+        if (item.lesson.completed) initial[item.lesson.id] = true
+      })
+      setCompletedLessons(initial)
+    }
+  }, [allLessons, currentLessonId])
 
   const [sidebarOpen, setSidebarOpen] = useState(true)
 
@@ -52,21 +57,21 @@ export default function CoursePlayerPage({ courseId, onBack }: CoursePlayerPageP
     {
       id: 'n-1',
       lessonId: 'l1-1',
-      lessonTitle: '1.1 Introduction to Modern UX Heuristics',
+      lessonTitle: 'Introduction',
       timestampSec: 142,
-      content: 'Remember: Visibility of system status is crucial for perceived performance.',
-      updatedAt: 'Today, 14:20',
+      content: 'Remember: Review key concepts and take structured notes during video walkthroughs.',
+      updatedAt: 'Today',
     },
   ])
 
   // Discussions State
   const [discussions, setDiscussions] = useState<DiscussionComment[]>(
-    course.discussions && course.discussions.length > 0 ? course.discussions : MOCK_DISCUSSIONS
+    course?.discussions && course.discussions.length > 0 ? course.discussions : MOCK_DISCUSSIONS
   )
 
   const currentIndex = allLessons.findIndex((item) => item.lesson.id === currentLessonId)
   const currentItem = allLessons[currentIndex] || allLessons[0]
-  const currentLesson = currentItem.lesson
+  const currentLesson = currentItem?.lesson
 
   const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1].lesson : null
   const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1].lesson : null
@@ -77,14 +82,20 @@ export default function CoursePlayerPage({ courseId, onBack }: CoursePlayerPageP
     setQuizSubmitted(false)
   }, [currentLessonId])
 
-  const markComplete = (lessonId: string) => {
+  const markComplete = async (lessonId: string) => {
     setCompletedLessons((prev) => ({ ...prev, [lessonId]: true }))
+    try {
+      await api.post('/api/progress/toggle-lesson', { lessonId, completed: true })
+    } catch {
+      // ignore offline error
+    }
     if (nextLesson) {
       setCurrentLessonId(nextLesson.id)
     }
   }
 
   const handleAddNote = (content: string) => {
+    if (!currentLesson) return
     const note: LearnerNote = {
       id: `note-${Date.now()}`,
       lessonId: currentLesson.id,
@@ -98,8 +109,8 @@ export default function CoursePlayerPage({ courseId, onBack }: CoursePlayerPageP
   const handleAddQuestion = (content: string) => {
     const comment: DiscussionComment = {
       id: `comm-${Date.now()}`,
-      authorName: 'Aulia Rahman',
-      authorAvatar: 'AR',
+      authorName: 'Learner',
+      authorAvatar: 'L',
       authorRole: 'Learner',
       createdAt: 'Just now',
       content,
@@ -125,6 +136,7 @@ export default function CoursePlayerPage({ courseId, onBack }: CoursePlayerPageP
   }
 
   const handleSubmitQuiz = () => {
+    if (!currentLesson) return
     setQuizSubmitted(true)
     const total = currentLesson.quizQuestions?.length || 1
     let score = 0
@@ -132,7 +144,7 @@ export default function CoursePlayerPage({ courseId, onBack }: CoursePlayerPageP
       if (quizAnswers[q.id] === q.correctIndex) score++
     })
     if (score / total >= 0.7) {
-      setCompletedLessons((prev) => ({ ...prev, [currentLesson.id]: true }))
+      markComplete(currentLesson.id)
     }
   }
 
@@ -140,6 +152,25 @@ export default function CoursePlayerPage({ courseId, onBack }: CoursePlayerPageP
   const totalLessonCount = allLessons.length
   const completedCount = Object.values(completedLessons).filter(Boolean).length
   const progressPercent = totalLessonCount > 0 ? Math.round((completedCount / totalLessonCount) * 100) : 0
+
+  if (loading && !course) {
+    return (
+      <div style={{ width: '100vw', height: '100vh', display: 'flex', alignItems: 'center', justifyContent: 'center', background: '#0C1526', color: '#fff' }}>
+        <p style={{ fontSize: 16, fontWeight: 600 }}>Loading course content from server...</p>
+      </div>
+    )
+  }
+
+  if (!course || !currentLesson) {
+    return (
+      <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0C1526', color: '#fff', gap: 16 }}>
+        <p style={{ fontSize: 16, fontWeight: 600 }}>No lessons found for this course.</p>
+        <button onClick={onBack} style={{ padding: '8px 16px', borderRadius: 8, background: '#2dd4bf', color: '#0C1526', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
+          Return to Dashboard
+        </button>
+      </div>
+    )
+  }
 
   return (
     <div
@@ -233,12 +264,11 @@ export default function CoursePlayerPage({ courseId, onBack }: CoursePlayerPageP
         </div>
       </div>
 
-      {/* Main Workspace Area */}
-      <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
-        {/* Center Content Viewport */}
+      {/* Main Body */}
+      <div style={{ flex: 1, display: 'flex', overflow: 'hidden' }}>
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', overflowY: 'auto' }}>
-          {/* Main Lesson Stage */}
-          <div style={{ background: '#000', minHeight: 460, position: 'relative', display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {/* Main Stage */}
+          <div style={{ padding: '24px 32px 16px', maxWidth: 1000, width: '100%', margin: '0 auto' }}>
             {currentLesson.type === 'video' && (
               <VideoPlayerStage
                 videoUrl={currentLesson.videoUrl}
@@ -259,7 +289,7 @@ export default function CoursePlayerPage({ courseId, onBack }: CoursePlayerPageP
                 questions={currentLesson.quizQuestions}
                 quizAnswers={quizAnswers}
                 quizSubmitted={quizSubmitted}
-                onAnswerSelect={(qId, optIdx) => setQuizAnswers((prev) => ({ ...prev, [qId]: optIdx }))}
+                onAnswerSelect={(qid: string, idx: number) => setQuizAnswers((p) => ({ ...p, [qid]: idx }))}
                 onSubmitQuiz={handleSubmitQuiz}
                 onRetakeQuiz={() => {
                   setQuizAnswers({})
@@ -274,89 +304,106 @@ export default function CoursePlayerPage({ courseId, onBack }: CoursePlayerPageP
                 resources={currentLesson.resources}
               />
             )}
+
+            {/* Bottom Nav between lessons */}
+            <div
+              style={{
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                marginTop: 24,
+                paddingTop: 16,
+                borderTop: '1px solid var(--card-border)',
+              }}
+            >
+              {prevLesson ? (
+                <button
+                  onClick={() => setCurrentLessonId(prevLesson.id)}
+                  style={{
+                    padding: '8px 16px',
+                    borderRadius: 8,
+                    border: '1px solid var(--card-border)',
+                    background: 'var(--card-bg)',
+                    color: 'var(--text-primary)',
+                    fontSize: 13,
+                    fontWeight: 600,
+                    cursor: 'pointer',
+                  }}
+                >
+                  ← Previous: {prevLesson.title.substring(0, 24)}...
+                </button>
+              ) : <div />}
+
+              <div style={{ display: 'flex', gap: 12 }}>
+                {!completedLessons[currentLesson.id] && (
+                  <button
+                    onClick={() => markComplete(currentLesson.id)}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 6,
+                      padding: '8px 16px',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: 'rgba(20, 184, 166, 0.12)',
+                      color: '#0d9488',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    <IconCheck s={16} /> Mark as Done
+                  </button>
+                )}
+
+                {nextLesson && (
+                  <button
+                    onClick={() => setCurrentLessonId(nextLesson.id)}
+                    style={{
+                      padding: '8px 18px',
+                      borderRadius: 8,
+                      border: 'none',
+                      background: '#0d9488',
+                      color: '#fff',
+                      fontSize: 13,
+                      fontWeight: 700,
+                      cursor: 'pointer',
+                    }}
+                  >
+                    Next Lesson →
+                  </button>
+                )}
+              </div>
+            </div>
           </div>
 
-          {/* Interaction Tabs Area */}
-          <PlayerTabs
-            courseDescription={course.overview || course.description}
-            currentLessonTitle={currentLesson.title}
-            notes={notes}
-            onAddNote={handleAddNote}
-            discussions={discussions}
-            onAddQuestion={handleAddQuestion}
-            onToggleUpvote={handleToggleUpvote}
-            channelTitle={course.channelTitle}
-            channelUrl={course.channelUrl}
-            credits={course.credits}
-            resources={course.resources}
-          />
-
-          {/* Bottom Lesson Navigation Bar */}
-          <div
-            style={{
-              height: 64,
-              borderTop: '1px solid var(--card-border)',
-              background: 'var(--card-bg)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              padding: '0 28px',
-              flexShrink: 0,
-            }}
-          >
-            <button
-              disabled={!prevLesson}
-              onClick={() => prevLesson && setCurrentLessonId(prevLesson.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 6,
-                padding: '8px 18px',
-                borderRadius: 10,
-                border: '1px solid var(--card-border)',
-                background: 'transparent',
-                color: prevLesson ? 'var(--text-primary)' : 'var(--text-muted)',
-                fontSize: 13,
-                fontWeight: 600,
-                cursor: prevLesson ? 'pointer' : 'not-allowed',
-                opacity: prevLesson ? 1 : 0.4,
-              }}
-            >
-              <IconChevLeft s={15} /> Previous Lesson
-            </button>
-
-            <button
-              onClick={() => markComplete(currentLesson.id)}
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 8,
-                padding: '10px 24px',
-                borderRadius: 10,
-                background: 'linear-gradient(135deg, #14b8a6, #0d9488)',
-                color: '#fff',
-                border: 'none',
-                fontSize: 13,
-                fontWeight: 700,
-                cursor: 'pointer',
-                fontFamily: 'inherit',
-                boxShadow: '0 4px 12px rgba(20,184,166,0.3)',
-              }}
-            >
-              <IconCheck s={16} /> Mark as Completed & Next →
-            </button>
+          {/* Interactive Player Tabs (Overview, Notes, Discussions, Resources) */}
+          <div style={{ padding: '0 32px 48px', maxWidth: 1000, width: '100%', margin: '0 auto' }}>
+            <PlayerTabs
+              courseDescription={course.description}
+              currentLessonTitle={currentLesson.title}
+              notes={notes}
+              discussions={discussions}
+              onAddNote={handleAddNote}
+              onAddQuestion={handleAddQuestion}
+              onToggleUpvote={handleToggleUpvote}
+              channelTitle={course.channelTitle}
+              channelUrl={course.channelUrl}
+              credits={course.credits}
+              resources={course.resources}
+            />
           </div>
         </div>
 
-        {/* Right Syllabus Navigation Sidebar */}
+        {/* Syllabus Sidebar */}
         {sidebarOpen && (
           <SyllabusSidebar
             modules={modules}
-            currentLessonId={currentLessonId}
+            currentLessonId={currentLesson.id}
             completedLessons={completedLessons}
             completedCount={completedCount}
             totalLessonCount={totalLessonCount}
-            onSelectLesson={(id) => setCurrentLessonId(id)}
+            onSelectLesson={(lid) => setCurrentLessonId(lid)}
             onClose={() => setSidebarOpen(false)}
           />
         )}

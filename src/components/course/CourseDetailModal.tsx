@@ -8,7 +8,7 @@ import {
 interface CourseDetailModalProps {
   course: Course
   onClose: () => void
-  onStartLearning: (courseId: number) => void
+  onStartLearning: (courseId: string | number) => void
 }
 
 export default function CourseDetailModal({

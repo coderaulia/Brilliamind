@@ -1,5 +1,6 @@
 import type { AnalyticsOverview } from './types'
-import { BarChart3, Globe, TrendingUp } from 'lucide-react'
+import { BarChart3, Globe, TrendingUp, Cloud, ArrowRight } from 'lucide-react'
+import { Link } from 'react-router-dom'
 
 interface AdminAnalyticsTabProps {
   analyticsData: AnalyticsOverview | null
@@ -8,6 +9,30 @@ interface AdminAnalyticsTabProps {
 export default function AdminAnalyticsTab({ analyticsData }: AdminAnalyticsTabProps) {
   return (
     <div className="space-y-6">
+      {/* Link to Full Operations Center */}
+      <div className="p-4 rounded-2xl bg-gradient-to-r from-indigo-900/40 via-purple-900/20 to-slate-900/50 border border-indigo-500/30 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-indigo-600/30 border border-indigo-500/40 flex items-center justify-center text-indigo-400">
+            <Cloud className="w-5 h-5" />
+          </div>
+          <div>
+            <h4 className="text-sm font-bold text-white flex items-center gap-2">
+              Full Platform Analytics & Cloudflare Signals
+            </h4>
+            <p className="text-xs text-slate-300">
+              Live edge requests, bandwidth usage, uptime SLA, popular courses, and visitor sessions.
+            </p>
+          </div>
+        </div>
+        <Link
+          to="/admin/analytics"
+          className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-lg shadow-indigo-600/30 transition-all shrink-0"
+        >
+          <span>Open Analytics Center</span>
+          <ArrowRight className="w-3.5 h-3.5" />
+        </Link>
+      </div>
+
       {/* Funnel Visualization */}
       <div className="p-6 rounded-2xl bg-[#1E293B]/80 border border-slate-800 space-y-4">
         <div className="flex items-center justify-between">

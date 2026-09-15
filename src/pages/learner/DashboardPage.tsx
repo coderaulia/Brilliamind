@@ -6,9 +6,9 @@ import ProgressRing from '@/components/ui/ProgressRing'
 import {
   IconBook, IconCheck, IconAward, IconClock,
 } from '@/components/ui/icons'
-import { ENROLLED_COURSES, ACTIVITIES, STAT_ITEMS } from '@/data/mock-data'
 import type { ThemeVariant } from '@/constants/design-tokens'
 import type { ComponentType, SVGProps } from 'react'
+import { useLiveDashboard } from '@/hooks/useLiveDashboard'
 
 type IconType = ComponentType<SVGProps<SVGSVGElement> & { s?: number }>
 
@@ -16,17 +16,18 @@ const STAT_ICONS: IconType[] = [IconBook, IconCheck, IconAward, IconClock]
 
 interface DashboardPageProps {
   variant?: ThemeVariant
-  onOpenCourse?: (id: number) => void
+  onOpenCourse?: (id: string | number) => void
   onNavToCourses?: () => void
 }
 
 export default function DashboardPage({ variant = 'Deep Navy', onOpenCourse, onNavToCourses }: DashboardPageProps) {
+  const { enrolledCourses, stats, activities } = useLiveDashboard()
   const v = variant === 'Bright Canvas' ? 'B' : 'A'
   const heatScheme = v === 'A' ? 'teal' : 'blue'
 
-  const totalLessons = ENROLLED_COURSES.reduce((s, c) => s + c.lessons, 0)
-  const totalDone    = ENROLLED_COURSES.reduce((s, c) => s + c.completed, 0)
-  const overallPct   = Math.round((totalDone / totalLessons) * 100)
+  const totalLessons = enrolledCourses.reduce((s, c) => s + c.lessons, 0)
+  const totalDone    = enrolledCourses.reduce((s, c) => s + c.completed, 0)
+  const overallPct   = totalLessons > 0 ? Math.round((totalDone / totalLessons) * 100) : 0
 
   return (
     <div style={{ flex: 1, overflow: 'auto', padding: 28, background: 'var(--page-bg)' }}>
@@ -50,21 +51,23 @@ export default function DashboardPage({ variant = 'Deep Navy', onOpenCourse, onN
                 Welcome back, Aulia
               </h1>
               <p style={{ fontSize: 15, opacity: 0.75, fontWeight: 500, lineHeight: 1.5 }}>
-                You've completed {totalDone} of {totalLessons} lessons across {ENROLLED_COURSES.length} courses
+                You've completed {totalDone} of {totalLessons} lessons across {enrolledCourses.length} courses
               </p>
-              <button
-                onClick={() => onOpenCourse?.(ENROLLED_COURSES[0]?.id || 1)}
-                style={{
-                  marginTop: 18, padding: '11px 28px', borderRadius: 10, border: 'none',
-                  background: 'rgba(255,255,255,0.12)', color: '#fff', fontSize: 14, fontWeight: 600,
-                  cursor: 'pointer', backdropFilter: 'blur(12px)', fontFamily: 'inherit',
-                  transition: 'all 0.2s', letterSpacing: '0.01em',
-                }}
-                onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.22)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
-                onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; e.currentTarget.style.transform = 'none' }}
-              >
-                Continue Learning →
-              </button>
+              {enrolledCourses.length > 0 && (
+                <button
+                  onClick={() => onOpenCourse?.(enrolledCourses[0]?.id)}
+                  style={{
+                    marginTop: 18, padding: '11px 28px', borderRadius: 10, border: 'none',
+                    background: 'rgba(255,255,255,0.12)', color: '#fff', fontSize: 14, fontWeight: 600,
+                    cursor: 'pointer', backdropFilter: 'blur(12px)', fontFamily: 'inherit',
+                    transition: 'all 0.2s', letterSpacing: '0.01em',
+                  }}
+                  onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.22)'; e.currentTarget.style.transform = 'translateY(-1px)' }}
+                  onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; e.currentTarget.style.transform = 'none' }}
+                >
+                  Continue Learning →
+                </button>
+              )}
             </div>
             <ProgressRing
               progress={overallPct} size={130} strokeWidth={9}
@@ -100,7 +103,7 @@ export default function DashboardPage({ variant = 'Deep Navy', onOpenCourse, onN
 
         {/* Stats */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16, marginBottom: 28 }}>
-          {STAT_ITEMS.map((s, i) => (
+          {stats.map((s, i) => (
             <div key={i} className="fade-in-up" style={{ animationDelay: `${i * 0.06}s` }}>
               <StatCard icon={STAT_ICONS[i]} label={s.label} value={s.value} index={i} variant={v} />
             </div>
@@ -123,7 +126,7 @@ export default function DashboardPage({ variant = 'Deep Navy', onOpenCourse, onN
 
           {v === 'A' ? (
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 16 }}>
-              {ENROLLED_COURSES.map((c, i) => (
+              {enrolledCourses.map((c, i) => (
                 <div key={c.id} className="fade-in-up" style={{ animationDelay: `${i * 0.07 + 0.15}s` }}>
                   <CourseCard course={c} variant="A" onClick={() => onOpenCourse?.(c.id)} />
                 </div>
@@ -131,7 +134,7 @@ export default function DashboardPage({ variant = 'Deep Navy', onOpenCourse, onN
             </div>
           ) : (
             <div style={{ display: 'flex', gap: 16, overflowX: 'auto', paddingBottom: 8 }}>
-              {ENROLLED_COURSES.map((c, i) => (
+              {enrolledCourses.map((c, i) => (
                 <div key={c.id} className="fade-in-up" style={{ minWidth: 260, flexShrink: 0, animationDelay: `${i * 0.07 + 0.15}s` }}>
                   <CourseCard course={c} variant="B" onClick={() => onOpenCourse?.(c.id)} />
                 </div>
@@ -169,7 +172,7 @@ export default function DashboardPage({ variant = 'Deep Navy', onOpenCourse, onN
                 }} />
               )}
               <div style={{ display: 'flex', flexDirection: 'column', gap: v === 'A' ? 18 : 10 }}>
-                {ACTIVITIES.map((a, i) => (
+                {activities.map((a, i) => (
                   <ActivityFeedItem key={i} activity={a} variant={v} />
                 ))}
               </div>

@@ -3,6 +3,11 @@ import { courseExcel01 } from './vanaila/course-excel-01'
 import { courseExcel02 } from './vanaila/course-excel-02'
 import { coursesExcelMore } from './vanaila/courses-excel-more'
 import { coursesSheetsSales } from './vanaila/courses-sheets-sales'
+import { courseSales02 } from './vanaila/course-sales-02'
+import { courseSales03 } from './vanaila/course-sales-03'
+import { courseExcel05 } from './vanaila/course-excel-05'
+import { coursePm01 } from './vanaila/course-pm-01'
+import { coursePm02 } from './vanaila/course-pm-02'
 
 export * from './vanaila/types'
 
@@ -22,4 +27,9 @@ export const vanailaCourses: SeedCourse[] = [
   courseExcel02,
   ...coursesExcelMore,
   ...coursesSheetsSales,
+  courseSales02,
+  courseSales03,
+  courseExcel05,
+  coursePm01,
+  coursePm02,
 ]

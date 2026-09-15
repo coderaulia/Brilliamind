@@ -1,19 +1,21 @@
 import { useState } from 'react'
-import { CATALOG_COURSES, CATEGORIES, LEVELS } from '@/data/mock-data'
+import { LEVELS } from '@/data/mock-data'
 import CatalogCourseCard from '@/components/ui/CatalogCourseCard'
 import { IconSearch, IconX } from '@/components/ui/icons'
+import { useLiveCourses } from '@/hooks/useLiveCourses'
 
 interface CatalogPageProps {
-  onOpenCourse?: (id: number) => void
+  onOpenCourse?: (id: string | number) => void
 }
 
 export default function CatalogPage({ onOpenCourse }: CatalogPageProps) {
+  const { courses, categories, loading } = useLiveCourses()
   const [search, setSearch] = useState('')
   const [cat, setCat] = useState('All')
   const [level, setLevel] = useState('All Levels')
   const [sort, setSort] = useState('Popular')
 
-  const filtered = CATALOG_COURSES.filter(c => {
+  const filtered = courses.filter(c => {
     if (cat !== 'All' && c.category !== cat) return false
     if (level !== 'All Levels' && c.level !== level) return false
     if (search && !c.title.toLowerCase().includes(search.toLowerCase()) && !c.instructor.toLowerCase().includes(search.toLowerCase())) return false
@@ -21,7 +23,7 @@ export default function CatalogPage({ onOpenCourse }: CatalogPageProps) {
   }).sort((a, b) => {
     if (sort === 'Popular') return b.students - a.students
     if (sort === 'Rating') return b.rating - a.rating
-    if (sort === 'Newest') return b.id - a.id
+    if (sort === 'Newest') return String(b.id).localeCompare(String(a.id))
     return 0
   })
 
@@ -47,7 +49,7 @@ export default function CatalogPage({ onOpenCourse }: CatalogPageProps) {
             Course Catalog
           </h1>
           <p style={{ fontSize: 14, color: 'var(--text-muted)', fontWeight: 500 }}>
-            Discover {CATALOG_COURSES.length} courses to accelerate your growth
+            Discover {courses.length} courses to accelerate your growth {loading ? '(loading latest data...)' : ''}
           </p>
         </div>
 
@@ -88,7 +90,7 @@ export default function CatalogPage({ onOpenCourse }: CatalogPageProps) {
 
         {/* Category chips */}
         <div style={{ display: 'flex', gap: 8, marginBottom: 24, flexWrap: 'wrap' }}>
-          {CATEGORIES.map(c => (
+          {categories.map(c => (
             <button key={c} onClick={() => setCat(c)} style={chipStyle(cat === c)}>{c}</button>
           ))}
         </div>
@@ -104,7 +106,7 @@ export default function CatalogPage({ onOpenCourse }: CatalogPageProps) {
           ))}
         </div>
 
-        {filtered.length === 0 && (
+        {filtered.length === 0 && !loading && (
           <div style={{ textAlign: 'center', padding: '60px 0', color: 'var(--text-muted)' }}>
             <IconSearch s={40} />
             <p style={{ fontSize: 16, fontWeight: 600, marginTop: 12 }}>No courses found</p>

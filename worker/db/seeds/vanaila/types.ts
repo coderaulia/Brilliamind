@@ -23,5 +23,6 @@ export interface SeedCourse {
   category: string
   tags: string[]
   playlistId: string
-  section: SeedSection
+  section?: SeedSection
+  sections?: SeedSection[]
 }

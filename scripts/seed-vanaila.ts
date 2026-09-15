@@ -21,15 +21,23 @@ async function runSeed() {
   console.log('======================================================')
   console.log(`Instructor: ${vanailaInstructor.name} (${vanailaInstructor.email})`)
   console.log(`Total Courses / Series: ${vanailaCourses.length}`)
-  const totalLessons = vanailaCourses.reduce((sum, c) => sum + c.section.lessons.length, 0)
+  const totalLessons = vanailaCourses.reduce((sum, c) => {
+    if (c.sections) return sum + c.sections.reduce((s, sec) => s + sec.lessons.length, 0)
+    if (c.section) return sum + c.section.lessons.length
+    return sum
+  }, 0)
   console.log(`Total Video Lessons: ${totalLessons}\n`)
 
   console.log('--- Series Summary by Category ---')
   for (const c of vanailaCourses) {
+    const courseLessonsCount = c.sections
+      ? c.sections.reduce((s, sec) => s + sec.lessons.length, 0)
+      : c.section?.lessons.length || 0
+    const firstLesson = c.sections ? c.sections[0]?.lessons[0] : c.section?.lessons[0]
     console.log(`• [${c.category}] ${c.title}`)
     console.log(`  ID: ${c.id} | Slug: ${c.slug}`)
-    console.log(`  Lessons: ${c.section.lessons.length} | First: ${c.section.lessons[0]?.title.slice(0, 50)}...`)
-    console.log(`  First Video URL: ${c.section.lessons[0]?.videoUrl}`)
+    console.log(`  Lessons: ${courseLessonsCount} | First: ${firstLesson?.title.slice(0, 50)}...`)
+    console.log(`  First Video URL: ${firstLesson?.videoUrl}`)
   }
 
   console.log('\n--- Seeding via Local Worker API ---')
