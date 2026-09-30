@@ -71,7 +71,7 @@ export interface HeatmapDay {
 export interface CertificateItem {
   id: string
   uuid: string
-  courseId: number
+  courseId: string | number
   courseTitle: string
   recipientName: string
   issueDate: string

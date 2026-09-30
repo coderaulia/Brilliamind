@@ -27,10 +27,10 @@ export default function CourseEngagementSection({ data, filteredCourses, courseS
         </div>
         <div className="flex items-center gap-3 text-xs">
           <span className="px-2.5 py-1 rounded-md bg-indigo-50 text-indigo-700 font-semibold border border-indigo-100">
-            {data?.coursesAndLearning.coursesPlayed ?? 4} Courses Active / Played
+            {data?.coursesAndLearning.coursesPlayed ?? '—'} Courses Active / Played
           </span>
           <span className="px-2.5 py-1 rounded-md bg-emerald-50 text-emerald-700 font-semibold border border-emerald-100">
-            {data?.coursesAndLearning.certificatesReleased ?? 43} Certificates Released
+            {data?.coursesAndLearning.certificatesReleased ?? '—'} Certificates Released
           </span>
         </div>
       </div>
@@ -43,8 +43,8 @@ export default function CourseEngagementSection({ data, filteredCourses, courseS
             <span>Courses Played</span>
           </div>
           <p className="text-xl font-bold text-slate-900 mt-1">
-            {data?.coursesAndLearning.coursesPlayed ?? 4}{' '}
-            <span className="text-xs font-normal text-slate-400">/ {data?.coursesAndLearning.totalCourses ?? 6} total</span>
+            {data?.coursesAndLearning.coursesPlayed ?? '—'}{' '}
+            <span className="text-xs font-normal text-slate-400">/ {data?.coursesAndLearning.totalCourses ?? '—'} total</span>
           </p>
         </div>
 
@@ -54,7 +54,7 @@ export default function CourseEngagementSection({ data, filteredCourses, courseS
             <span>Lessons Completed</span>
           </div>
           <p className="text-xl font-bold text-slate-900 mt-1">
-            {data?.coursesAndLearning.lessonsCompleted ?? 84}
+            {data?.coursesAndLearning.lessonsCompleted ?? '—'}
           </p>
         </div>
 
@@ -64,7 +64,7 @@ export default function CourseEngagementSection({ data, filteredCourses, courseS
             <span>Video Watch Time</span>
           </div>
           <p className="text-xl font-bold text-slate-900 mt-1">
-            {data?.coursesAndLearning.totalWatchMinutes ?? 142}{' '}
+            {data?.coursesAndLearning.totalWatchMinutes ?? '—'}{' '}
             <span className="text-xs font-normal text-slate-400">mins</span>
           </p>
         </div>
@@ -75,9 +75,9 @@ export default function CourseEngagementSection({ data, filteredCourses, courseS
             <span>Quiz Pass Rate</span>
           </div>
           <p className="text-xl font-bold text-slate-900 mt-1">
-            {data?.coursesAndLearning.quizStats?.passRate ?? 87}%{' '}
+            {data?.coursesAndLearning.quizStats?.passRate ?? '—'}%{' '}
             <span className="text-[11px] font-normal text-slate-400">
-              ({data?.coursesAndLearning.quizStats?.avgScore ?? 84} avg)
+              ({data?.coursesAndLearning.quizStats?.avgScore ?? '—'} avg)
             </span>
           </p>
         </div>
@@ -88,7 +88,7 @@ export default function CourseEngagementSection({ data, filteredCourses, courseS
             <span>Certificates Issued</span>
           </div>
           <p className="text-xl font-bold text-slate-900 mt-1">
-            {data?.coursesAndLearning.certificatesReleased ?? 43}
+            {data?.coursesAndLearning.certificatesReleased ?? '—'}
           </p>
         </div>
       </div>

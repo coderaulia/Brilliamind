@@ -19,7 +19,7 @@ export default function DiagnosticsGrid({ data }: DiagnosticsGridProps) {
 
         <div className="space-y-3 pt-2">
           {(data?.funnel || []).map((step) => {
-            const maxVal = data?.funnel[0]?.count || 60
+            const maxVal = data?.funnel[0]?.count || 1
             const pct = Math.round((step.count / maxVal) * 100)
             return (
               <div key={step.step} className="space-y-1">
@@ -50,7 +50,7 @@ export default function DiagnosticsGrid({ data }: DiagnosticsGridProps) {
 
         <div className="space-y-3 pt-2">
           {(data?.trafficSources || []).map((src) => {
-            const maxVal = data?.trafficSources[0]?.count || 111
+            const maxVal = data?.trafficSources[0]?.count || 1
             const pct = Math.round((src.count / maxVal) * 100)
             return (
               <div key={src.source} className="space-y-1">

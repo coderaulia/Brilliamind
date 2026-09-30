@@ -86,12 +86,12 @@ analyticsRouter.get('/admin/overview', authMiddleware, requireRole('admin'), asy
     eventMap[row.eventType] = Number(row.count)
   }
 
-  const pageViews = eventMap['page_view'] || 120
-  const inviteOpens = eventMap['invite_accept_view'] || 45
-  const inviteActivations = totalUsersResult?.value || 32
-  const activeLearners = totalEnrollmentsResult?.value || 28
-  const halfMilestone = total50MilestoneResult?.value || 19
-  const courseGraduates = totalCompletedResult?.value || 14
+  const pageViews = eventMap['page_view'] || 0
+  const inviteOpens = eventMap['invite_accept_view'] || 0
+  const inviteActivations = totalUsersResult?.value || 0
+  const activeLearners = totalEnrollmentsResult?.value || 0
+  const halfMilestone = total50MilestoneResult?.value || 0
+  const courseGraduates = totalCompletedResult?.value || 0
 
   // Country Breakdown from Cloudflare Edge
   const geoCounts = await db.select({
@@ -119,27 +119,22 @@ analyticsRouter.get('/admin/overview', authMiddleware, requireRole('admin'), asy
 
   return c.json({
     funnel: [
-      { stage: '1. Landing & Public Visitors', count: Math.max(pageViews, 120), color: '#6366f1' },
-      { stage: '2. Invitations Opened', count: Math.max(inviteOpens, 45), color: '#8b5cf6' },
-      { stage: '3. Activated Accounts', count: Math.max(inviteActivations, 32), color: '#a855f7' },
-      { stage: '4. Enrolled in Course', count: Math.max(activeLearners, 28), color: '#ec4899' },
-      { stage: '5. Halfway (50% Milestone)', count: Math.max(halfMilestone, 19), color: '#f59e0b' },
-      { stage: '6. Course Graduates (100%)', count: Math.max(courseGraduates, 14), color: '#10b981' },
+      { stage: '1. Landing & Public Visitors', count: pageViews, color: '#6366f1' },
+      { stage: '2. Invitations Opened', count: inviteOpens, color: '#8b5cf6' },
+      { stage: '3. Activated Accounts', count: inviteActivations, color: '#a855f7' },
+      { stage: '4. Enrolled in Course', count: activeLearners, color: '#ec4899' },
+      { stage: '5. Halfway (50% Milestone)', count: halfMilestone, color: '#f59e0b' },
+      { stage: '6. Course Graduates (100%)', count: courseGraduates, color: '#10b981' },
     ],
     metrics: {
-      totalVisitors: Math.max(pageViews, 120),
+      totalVisitors: pageViews,
       totalUsers: totalUsersResult?.value || 0,
       totalEnrollments: totalEnrollmentsResult?.value || 0,
       totalGraduates: totalCompletedResult?.value || 0,
-      activationRate: Math.round((inviteActivations / Math.max(inviteOpens, 1)) * 100),
-      completionRate: Math.round((courseGraduates / Math.max(activeLearners, 1)) * 100),
+      activationRate: Math.round((inviteActivations / inviteOpens) * 100),
+      completionRate: Math.round((courseGraduates / activeLearners) * 100),
     },
-    geo: geoCounts.length > 0 ? geoCounts : [
-      { country: 'ID', count: 184 },
-      { country: 'SG', count: 42 },
-      { country: 'US', count: 28 },
-      { country: 'MY', count: 16 },
-    ],
+    geo: geoCounts.map((g) => ({ country: g.country || 'Unknown', count: Number(g.count) })),
     recentEvents,
   })
 })
@@ -252,10 +247,10 @@ analyticsRouter.get('/admin/platform', authMiddleware, requireRole('admin'), asy
     .from(quizAttempts)
     .get()
 
-  const totalQuizAttempts = totalQuizAttemptsResult?.value || 85
-  const passedQuizAttempts = passedQuizAttemptsResult?.value || 74
-  const quizPassRate = Math.round((passedQuizAttempts / Math.max(totalQuizAttempts, 1)) * 100)
-  const avgQuizScore = Math.round(Number(avgQuizScoreResult?.value) || 84)
+  const totalQuizAttempts = totalQuizAttemptsResult?.value || 0
+  const passedQuizAttempts = passedQuizAttemptsResult?.value || 0
+  const quizPassRate = Math.round((passedQuizAttempts / totalQuizAttempts) * 100)
+  const avgQuizScore = Math.round(Number(avgQuizScoreResult?.value) || 0)
 
   // Categories Breakdown
   const categoriesRaw = await db
@@ -287,13 +282,14 @@ analyticsRouter.get('/admin/platform', authMiddleware, requireRole('admin'), asy
     eventMap[row.eventType] = Number(row.count)
   }
 
-  const landingViews = eventMap['page_view'] || cfStats.metrics.pageViews || 60
-  const inviteOpens = eventMap['invite_accept_view'] || 18
-  const signupsStarted = Math.max(inviteOpens, 14)
-  const signupsCompleted = totalUsers || 8
-  const assessmentsStarted = totalEnrollmentsResult?.value || 49
-  const assessmentsCompleted = totalCertificatesResult?.value || 43
-  const funnelCompletionRate = Math.round((assessmentsCompleted / Math.max(landingViews, 1)) * 100)
+  const landingViews = eventMap['page_view'] || cfStats.metrics.pageViews || 0
+  const inviteOpens = eventMap['invite_accept_view'] || 0
+  const signupsStarted = inviteOpens
+  const signupsCompleted = totalUsers || 0
+  const assessmentsStarted = totalEnrollmentsResult?.value || 0
+  const assessmentsCompleted = totalCertificatesResult?.value || 0
+  const halfwayResult = await db.select({ value: count() }).from(enrollments).where(sql`${enrollments.milestone50SentAt} IS NOT NULL`).get()
+  const funnelCompletionRate = Math.round((assessmentsCompleted / landingViews) * 100)
 
   // Top Pages
   const topPagesRaw = await db
@@ -308,31 +304,24 @@ analyticsRouter.get('/admin/platform', authMiddleware, requireRole('admin'), asy
     .limit(7)
     .all()
 
-  const topPages =
-    topPagesRaw.length > 0
-      ? topPagesRaw.map((p) => ({
-          path: p.path || '/',
-          count: Number(p.count),
-        }))
-      : [
-          { path: '/courses/vanaila-excel-01', count: 124 },
-          { path: '/', count: 90 },
-          { path: '/learn/course-101', count: 81 },
-          { path: '/catalog', count: 71 },
-          { path: '/learn/course-102', count: 63 },
-          { path: '/dashboard', count: 60 },
-          { path: '/login', count: 10 },
-        ]
+  const topPages = topPagesRaw.map((p) => ({
+      path: p.path || '/',
+      count: Number(p.count),
+    }))
 
-  // CTA clicks
-  const ctaClicks = [
-    { label: 'Mulai Kursus Gratis', count: 26 },
-    { label: 'Explore Catalog', count: 18 },
-    { label: 'Start First Lesson', count: 14 },
-    { label: 'Download Resources', count: 12 },
-    { label: 'Take Course Quiz', count: 9 },
-    { label: 'Claim Certificate', count: 8 },
-  ]
+  // CTA clicks (tracked as 'cta_click' events with a `label` property)
+  const ctaClicksRaw = await db
+    .select({
+      label: sql<string>`COALESCE(json_extract(${analyticsEvents.propertiesJson}, '$.label'), 'Unlabeled')`,
+      count: count(),
+    })
+    .from(analyticsEvents)
+    .where(eq(analyticsEvents.eventType, 'cta_click'))
+    .groupBy(sql`1`)
+    .orderBy(desc(count()))
+    .limit(6)
+    .all()
+  const ctaClicks = ctaClicksRaw.map((r) => ({ label: r.label, count: Number(r.count) }))
 
   // Recent live visitor sessions
   const recentEventsRaw = await db
@@ -348,91 +337,94 @@ analyticsRouter.get('/admin/platform', authMiddleware, requireRole('admin'), asy
     .limit(4)
     .all()
 
-  const recentVisitors =
-    recentEventsRaw.length > 0
-      ? recentEventsRaw.map((ev, idx) => ({
-          path: ev.path || '/dashboard',
-          title: `BrilliaMind LMS - ${ev.path || 'Platform'}`,
-          sessionId: (ev.id || `session-${idx}`).slice(0, 12),
-          country: ev.ipCountry || 'ID',
-          createdAt: ev.createdAt,
-        }))
-      : [
-          {
-            path: '/admin/login',
-            title: 'BrilliaMind Platform | Superadmin Portal',
-            sessionId: 'caaed9d7353d',
-            country: 'ID',
-            createdAt: new Date().toISOString(),
-          },
-          {
-            path: '/learn/101',
-            title: 'Mastering Advanced Excel Formulas | BrilliaMind',
-            sessionId: 'b712fa902188',
-            country: 'ID',
-            createdAt: new Date(Date.now() - 60000).toISOString(),
-          },
-          {
-            path: '/catalog',
-            title: 'Browse High-Impact Courses | BrilliaMind',
-            sessionId: '89ce01fa2201',
-            country: 'SG',
-            createdAt: new Date(Date.now() - 150000).toISOString(),
-          },
-          {
-            path: '/',
-            title: 'BrilliaMind LMS - Elevate Your Career',
-            sessionId: '54ad987622bb',
-            country: 'ID',
-            createdAt: new Date(Date.now() - 240000).toISOString(),
-          },
-        ]
+  const recentVisitors = recentEventsRaw.map((ev, idx) => ({
+      path: ev.path || '/dashboard',
+      title: `BrilliaMind LMS - ${ev.path || 'Platform'}`,
+      sessionId: (ev.id || `session-${idx}`).slice(0, 12),
+      country: ev.ipCountry || 'ID',
+      createdAt: ev.createdAt,
+    }))
 
-  // Traffic sources
-  const trafficSources = [
-    { source: 'direct / unknown', count: 111 },
-    { source: 'google.com / organic', count: 38 },
-    { source: 'linkedin.com / social', count: 14 },
-    { source: 'internal / referral', count: 9 },
-  ]
+  // Traffic sources (grouped by page-view referrer)
+  const trafficSourcesRaw = await db
+    .select({
+      source: sql<string>`COALESCE(NULLIF(${analyticsEvents.referrer}, ''), 'direct / unknown')`,
+      count: count(),
+    })
+    .from(analyticsEvents)
+    .where(eq(analyticsEvents.eventType, 'page_view'))
+    .groupBy(sql`1`)
+    .orderBy(desc(count()))
+    .limit(6)
+    .all()
+  const trafficSources = trafficSourcesRaw.map((r) => ({ source: r.source, count: Number(r.count) }))
 
-  // Frontend and API error hotspots
-  const errors = [
-    { errorType: 'window_error', path: '/learn/course-101', count: 7 },
-    { errorType: 'unhandled_rejection', path: '/catalog/filter', count: 4 },
-    { errorType: 'chunk_preload_error', path: '/player/video', count: 2 },
-    { errorType: 'api_timeout_retry', path: '/api/progress', count: 1 },
-  ]
+  // Frontend error hotspots (events whose type ends in '_error' or is an unhandled rejection)
+  const errorFilter = sql`(${analyticsEvents.eventType} LIKE '%_error' OR ${analyticsEvents.eventType} = 'unhandled_rejection')`
+  const errorsRaw = await db
+    .select({ errorType: analyticsEvents.eventType, path: analyticsEvents.path, count: count() })
+    .from(analyticsEvents)
+    .where(errorFilter)
+    .groupBy(analyticsEvents.eventType, analyticsEvents.path)
+    .orderBy(desc(count()))
+    .limit(6)
+    .all()
+  const errors = errorsRaw.map((r) => ({ errorType: r.errorType, path: r.path || '/', count: Number(r.count) }))
+  const errorTotals = await db
+    .select({
+      total: count(),
+      affected: sql<number>`COUNT(DISTINCT COALESCE(${analyticsEvents.userId}, ${analyticsEvents.anonymousId}))`,
+    })
+    .from(analyticsEvents)
+    .where(errorFilter)
+    .get()
 
-  // Top API Endpoints and latency health
-  const topApiEndpoints = [
-    { endpoint: '/api/courses', count: 81 },
-    { endpoint: '/api/progress/lesson', count: 52 },
-    { endpoint: '/api/analytics/event', count: 36 },
-    { endpoint: '/api/auth/me', count: 28 },
-    { endpoint: '/api/auth/login', count: 18 },
-    { endpoint: '/api/admin/users', count: 10 },
-  ]
+  // Visitor stats derived from telemetry
+  const visitorKey = sql`COALESCE(${analyticsEvents.userId}, ${analyticsEvents.anonymousId})`
+  const visitorStats = await db
+    .select({
+      live: sql<number>`COUNT(DISTINCT CASE WHEN ${analyticsEvents.createdAt} >= datetime('now', '-5 minutes') THEN ${visitorKey} END)`,
+      unique: sql<number>`COUNT(DISTINCT ${visitorKey})`,
+    })
+    .from(analyticsEvents)
+    .get()
+  const returningRows = await db
+    .select({ visitor: visitorKey })
+    .from(analyticsEvents)
+    .groupBy(visitorKey)
+    .having(sql`COUNT(DISTINCT date(${analyticsEvents.createdAt})) > 1`)
+    .all()
+  const uniqueVisitors = Number(visitorStats?.unique) || 0
+  const returningVisitors = returningRows.length
+  const rangeDays = timeframe === '7d' ? 7 : timeframe === '90d' ? 90 : 30
+  const newUsersRow = await db
+    .select({ value: count() })
+    .from(profiles)
+    .where(sql`${profiles.createdAt} >= datetime('now', ${`-${rangeDays} days`})`)
+    .get()
+
+  // Per-endpoint API latency is not instrumented yet
+  const topApiEndpoints: { endpoint: string; count: number }[] = []
 
   return c.json({
     timeframe,
     summary: {
-      requests: cfStats.metrics.totalRequests || 344,
-      errorRate: cfStats.metrics.errorRate || 7.56,
-      liveVisitors: 1,
-      pageViews: cfStats.metrics.pageViews || 554,
-      activeUsers: totalUsers || 4,
-      newUsersInRange: 2,
+      requests: cfStats.metrics.totalRequests || 0,
+      errorRate: cfStats.metrics.errorRate || 0,
+      liveVisitors: Number(visitorStats?.live) || 0,
+      pageViews: cfStats.metrics.pageViews || 0,
+      activeUsers: totalUsers || 0,
+      newUsersInRange: newUsersRow?.value || 0,
       paidRevenue: 0,
       pendingPayments: 0,
-      funnelCompletionRate: Math.min(funnelCompletionRate, 71.67),
+      funnelCompletionRate,
       completedFromVisitors: `${assessmentsCompleted} completed from ${landingViews} landing visitors`,
-      returningVisitorsRate: 4.46,
-      returningVisitorsCount: 5,
+      returningVisitorsRate: uniqueVisitors > 0 ? Math.round((returningVisitors / uniqueVisitors) * 10000) / 100 : 0,
+      returningVisitorsCount: returningVisitors,
       trafficSourcesCount: trafficSources.length,
-      topSourceVisitors: trafficSources[0].count,
-      frontendErrorsCount: 18,
-      affectedVisitorsCount: 6,
+      topSourceVisitors: trafficSources[0]?.count ?? 0,
+      frontendErrorsCount: errorTotals?.total || 0,
+      affectedVisitorsCount: Number(errorTotals?.affected) || 0,
     },
     funnel: [
       { step: 'landing viewed', count: landingViews },
@@ -441,30 +433,36 @@ analyticsRouter.get('/admin/platform', authMiddleware, requireRole('admin'), asy
       { step: 'course / assessment started', count: assessmentsStarted },
       { step: 'course / assessment completed', count: assessmentsCompleted },
     ],
+    activation: {
+      visitors: landingViews,
+      enrolled: assessmentsStarted,
+      halfway: halfwayResult?.value || 0,
+      certified: assessmentsCompleted,
+    },
     topPages,
     ctaClicks,
     recentVisitors,
     trafficSources,
     errors,
     apiHealth: {
-      averageLatencyMs: 180.05,
-      maxLatencyMs: 1312,
+      averageLatencyMs: 0,
+      maxLatencyMs: 0,
       serverErrors: cfStats.httpStatus.status5xx || 0,
-      uniqueClients: 66,
+      uniqueClients: uniqueVisitors,
       topEndpoints: topApiEndpoints,
     },
     cloudflare: cfStats,
     usersAndSessions: {
-      admins: adminsCount || 3,
-      instructors: instructorsCount || 4,
-      learners: learnersCount || 1,
+      admins: adminsCount || 0,
+      instructors: instructorsCount || 0,
+      learners: learnersCount || 0,
       activeSessions: 0,
     },
     coursesAndLearning: {
-      totalCourses: totalCoursesResult?.value || 6,
-      coursesPlayed: Number(distinctCoursesPlayedResult?.value) || 4,
-      lessonsCompleted: totalLessonsCompletedResult?.value || 84,
-      certificatesReleased: totalCertificatesResult?.value || 43,
+      totalCourses: totalCoursesResult?.value || 0,
+      coursesPlayed: Number(distinctCoursesPlayedResult?.value) || 0,
+      lessonsCompleted: totalLessonsCompletedResult?.value || 0,
+      certificatesReleased: totalCertificatesResult?.value || 0,
       totalWatchMinutes: Math.round(Number(totalWatchResult?.value || 0) / 60),
       popularCourses,
       quizStats: {

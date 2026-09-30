@@ -12,6 +12,7 @@ import {
 } from 'lucide-react'
 
 import { VANAILA_MOCK_COURSES } from '@/data/vanaila-mock-courses'
+import { MOCK_DATA_ENABLED } from '@/lib/mock-mode'
 
 interface CourseItem {
   id: string
@@ -62,12 +63,12 @@ export default function CourseManagerPage() {
       if (res.courses && res.courses.length > 0) {
         setCourses(res.courses)
       } else {
-        // Automatically provide seeded Vanaila training courses for inspection and editing
-        setCourses(seedCourseItems)
+        // Seeded Vanaila training courses are only shown in local mock mode
+        setCourses(MOCK_DATA_ENABLED ? seedCourseItems : [])
       }
-    } catch {
-      // Graceful fallback to seeded courses in offline / local development mode
-      setCourses(seedCourseItems)
+    } catch (err) {
+      setCourses(MOCK_DATA_ENABLED ? seedCourseItems : [])
+      setError(err instanceof Error ? err.message : 'Failed to load courses')
     } finally {
       setIsLoading(false)
     }

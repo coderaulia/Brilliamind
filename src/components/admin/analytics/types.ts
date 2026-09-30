@@ -35,6 +35,12 @@ export interface PlatformAnalyticsData {
     affectedVisitorsCount: number
   }
   funnel: Array<{ step: string; count: number }>
+  activation: {
+    visitors: number
+    enrolled: number
+    halfway: number
+    certified: number
+  }
   topPages: Array<{ path: string; count: number }>
   ctaClicks: Array<{ label: string; count: number }>
   recentVisitors: Array<{

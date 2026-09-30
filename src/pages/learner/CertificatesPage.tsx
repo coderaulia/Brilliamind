@@ -1,5 +1,7 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { MOCK_CERTIFICATES, type CertificateItem } from '@/data/mock-data'
+import { api } from '@/lib/api'
+import { MOCK_DATA_ENABLED } from '@/lib/mock-mode'
 import {
   IconAward, IconCheckCircle, IconDownload, IconShare,
   IconExternalLink, IconX
@@ -8,6 +10,20 @@ import {
 export default function CertificatesPage() {
   const [selectedCert, setSelectedCert] = useState<CertificateItem | null>(null)
   const [copiedLink, setCopiedLink] = useState(false)
+  const [certificates, setCertificates] = useState<CertificateItem[]>([])
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    let active = true
+    api.get<{ certificates: CertificateItem[] }>('/api/certificates/mine')
+      .then((res) => { if (active) setCertificates(res.certificates) })
+      .catch((err) => {
+        console.error('Failed to load certificates:', err)
+        if (active && MOCK_DATA_ENABLED) setCertificates(MOCK_CERTIFICATES)
+      })
+      .finally(() => { if (active) setLoading(false) })
+    return () => { active = false }
+  }, [])
 
   const handleCopyLink = (uuid: string) => {
     const url = `${window.location.origin}/verify/${uuid}`
@@ -54,7 +70,7 @@ export default function CertificatesPage() {
               Accomplishments
             </div>
             <h2 style={{ fontSize: 22, fontWeight: 800, marginBottom: 8 }}>
-              You've earned {MOCK_CERTIFICATES.length} Verified Certificate!
+              You've earned {certificates.length} Verified Certificate{certificates.length === 1 ? '' : 's'}!
             </h2>
             <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.8)', maxWidth: 540, lineHeight: 1.5 }}>
               Share your verified achievements directly to LinkedIn, include them in your portfolio, or download print-ready PDFs.
@@ -66,7 +82,7 @@ export default function CertificatesPage() {
             backdropFilter: 'blur(10px)', textAlign: 'center', border: '1px solid rgba(255,255,255,0.15)'
           }}>
             <div style={{ fontSize: 32, fontWeight: 800, color: '#2dd4bf' }}>
-              {MOCK_CERTIFICATES.length}
+              {certificates.length}
             </div>
             <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,255,255,0.8)' }}>
               Active Credentials
@@ -75,8 +91,13 @@ export default function CertificatesPage() {
         </div>
 
         {/* Certificates Grid */}
+        {!loading && certificates.length === 0 && (
+          <p style={{ fontSize: 14, color: 'var(--text-muted)', marginBottom: 40 }}>
+            No certificates yet. Complete 100% of a course to earn your first verified credential.
+          </p>
+        )}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: 24, marginBottom: 40 }}>
-          {MOCK_CERTIFICATES.map(cert => (
+          {certificates.map(cert => (
             <div
               key={cert.id}
               style={{
@@ -97,7 +118,7 @@ export default function CertificatesPage() {
                     <IconCheckCircle s={14} /> Verified Credential
                   </div>
                   <span style={{ fontSize: 12, color: 'var(--text-muted)', fontWeight: 500 }}>
-                    {cert.issueDate}
+                    {new Date(cert.issueDate).toLocaleDateString()}
                   </span>
                 </div>
 
@@ -259,7 +280,7 @@ export default function CertificatesPage() {
 
                   <div style={{ textAlign: 'center' }}>
                     <div style={{ fontSize: 12, fontWeight: 700, color: '#1e293b', marginBottom: 2 }}>
-                      {selectedCert.issueDate}
+                      {new Date(selectedCert.issueDate).toLocaleDateString()}
                     </div>
                     <div style={{ fontSize: 11, color: '#64748b', fontWeight: 600 }}>Date of Issue</div>
                   </div>

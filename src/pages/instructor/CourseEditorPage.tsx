@@ -13,6 +13,7 @@ import {
 } from 'lucide-react'
 
 import { VANAILA_MOCK_COURSES } from '@/data/vanaila-mock-courses'
+import { MOCK_DATA_ENABLED } from '@/lib/mock-mode'
 
 interface Lesson {
   id: string
@@ -74,8 +75,8 @@ export default function CourseEditorPage() {
       setCourse(res.course)
       setSections(res.sections)
     } catch (err: unknown) {
-      // Graceful fallback to seeded Vanaila courses
-      const seedCourse = VANAILA_MOCK_COURSES.find(
+      // Seeded Vanaila courses are only used in local mock mode
+      const seedCourse = MOCK_DATA_ENABLED && VANAILA_MOCK_COURSES.find(
         (c) => String(c.id) === courseId || c.title.toLowerCase().includes(courseId.toLowerCase())
       )
       if (seedCourse) {

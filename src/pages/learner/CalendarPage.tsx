@@ -1,16 +1,36 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { MOCK_CALENDAR_EVENTS, type CalendarEvent } from '@/data/mock-data'
+import { MOCK_DATA_ENABLED } from '@/lib/mock-mode'
 import {
   IconCalendar, IconClock, IconVideo, IconCheckCircle,
   IconFire, IconExternalLink, IconPlus, IconChevLeft, IconChevRight, IconX
 } from '@/components/ui/icons'
 
+// Personal study events are kept in this browser until a calendar API exists
+const EVENTS_KEY = 'bm_calendar_events'
+
 export default function CalendarPage() {
-  const [events, setEvents] = useState<CalendarEvent[]>(MOCK_CALENDAR_EVENTS)
+  const [events, setEvents] = useState<CalendarEvent[]>(() => {
+    try {
+      const saved = localStorage.getItem(EVENTS_KEY)
+      if (saved) return JSON.parse(saved) as CalendarEvent[]
+    } catch {
+      // storage unavailable
+    }
+    return MOCK_DATA_ENABLED ? MOCK_CALENDAR_EVENTS : []
+  })
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(EVENTS_KEY, JSON.stringify(events))
+    } catch {
+      // storage unavailable
+    }
+  }, [events])
   const [viewMode, setViewMode] = useState<'month' | 'agenda'>('month')
   const [showAddModal, setShowAddModal] = useState(false)
   const [newTitle, setNewTitle] = useState('')
-  const [newDate, setNewDate] = useState('2026-08-25')
+  const [newDate, setNewDate] = useState(() => new Date().toISOString().slice(0, 10))
   const [newTime, setNewTime] = useState('20:00 WIB')
   const [newType, setNewType] = useState<CalendarEvent['type']>('study_goal')
   const [newCourse, setNewCourse] = useState('UX Design Fundamentals')

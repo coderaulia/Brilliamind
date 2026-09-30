@@ -35,9 +35,9 @@ const DataSafetyPage = lazy(() => import('@/pages/public/DataSafetyPage'))
 function StandaloneCoursePlayer() {
   const { courseId } = useParams<{ courseId: string }>()
   const navigate = useNavigate()
-  const id = courseId || 'crs-web-dev-001'
+  if (!courseId) return <Navigate to="/dashboard" replace />
 
-  return <CoursePlayerPage courseId={id} onBack={() => navigate('/dashboard')} />
+  return <CoursePlayerPage courseId={courseId} onBack={() => navigate('/dashboard')} />
 }
 
 function LearnerApp() {
@@ -109,7 +109,7 @@ function LearnerApp() {
           course={inspectingCourse}
           onClose={() => setInspectCourseId(null)}
           onStartLearning={async (id) => {
-            await enrollCourse(id)
+            if (!(await enrollCourse(id))) return
             setInspectCourseId(null)
             setActivePlayerCourseId(id)
           }}

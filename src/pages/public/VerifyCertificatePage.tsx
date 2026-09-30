@@ -1,10 +1,55 @@
+import { useEffect, useState } from 'react'
 import { useParams, Link } from 'react-router-dom'
-import { MOCK_CERTIFICATES } from '@/data/mock-data'
+import type { CertificateItem } from '@/data/mock-data'
 import { IconCheckCircle } from '@/components/ui/icons'
+import { api } from '@/lib/api'
+
+type VerifyState =
+  | { status: 'loading' }
+  | { status: 'invalid' }
+  | { status: 'verified'; cert: CertificateItem }
 
 export default function VerifyCertificatePage() {
   const { certUuid } = useParams<{ certUuid: string }>()
-  const cert = MOCK_CERTIFICATES.find(c => c.uuid === certUuid) || MOCK_CERTIFICATES[0]
+  const [state, setState] = useState<VerifyState>({ status: 'loading' })
+
+  useEffect(() => {
+    if (!certUuid) {
+      setState({ status: 'invalid' })
+      return
+    }
+    let active = true
+    setState({ status: 'loading' })
+    api.get<{ certificate: CertificateItem }>(`/api/certificates/verify/${encodeURIComponent(certUuid)}`)
+      .then((res) => { if (active) setState({ status: 'verified', cert: res.certificate }) })
+      .catch(() => { if (active) setState({ status: 'invalid' }) })
+    return () => { active = false }
+  }, [certUuid])
+
+  if (state.status !== 'verified') {
+    return (
+      <div style={{
+        minHeight: '100vh', background: '#090d16', color: '#f8fafc',
+        fontFamily: "'Plus Jakarta Sans', system-ui, sans-serif",
+        display: 'flex', flexDirection: 'column', alignItems: 'center',
+        justifyContent: 'center', padding: '40px 20px', textAlign: 'center', gap: 12
+      }}>
+        {state.status === 'loading' ? (
+          <p style={{ fontSize: 14, color: '#94a3b8' }}>Verifying certificate…</p>
+        ) : (
+          <>
+            <h1 style={{ fontSize: 22, fontWeight: 800, color: '#f87171' }}>Certificate not found</h1>
+            <p style={{ fontSize: 13, color: '#94a3b8', maxWidth: 420 }}>
+              No BrilliaMind certificate matches this ID. The link may be mistyped, or the credential may not exist.
+            </p>
+            <Link to="/" style={{ color: '#2dd4bf', fontSize: 13, fontWeight: 700 }}>Go to BrilliaMind →</Link>
+          </>
+        )}
+      </div>
+    )
+  }
+
+  const { cert } = state
 
   return (
     <div style={{
@@ -57,7 +102,7 @@ export default function VerifyCertificatePage() {
             Official Certificate Verified
           </h1>
           <p style={{ fontSize: 13, color: '#94a3b8' }}>
-            This credential is valid and cryptographically registered with BrilliaMind LMS.
+            This credential is valid and registered with BrilliaMind LMS.
           </p>
         </div>
 
@@ -92,7 +137,7 @@ export default function VerifyCertificatePage() {
             }}>
               <div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Issue Date</div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: '#e2e8f0', marginTop: 2 }}>{cert.issueDate}</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: '#e2e8f0', marginTop: 2 }}>{new Date(cert.issueDate).toLocaleDateString()}</div>
               </div>
               <div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' }}>Performance Grade</div>
@@ -129,7 +174,7 @@ export default function VerifyCertificatePage() {
 
         {/* UUID Footer */}
         <div style={{ textAlign: 'center', fontSize: 12, color: '#64748b', marginBottom: 24 }}>
-          Certificate UUID: <span style={{ color: '#94a3b8', fontFamily: 'monospace' }}>{certUuid || cert.uuid}</span>
+          Certificate UUID: <span style={{ color: '#94a3b8', fontFamily: 'monospace' }}>{cert.uuid}</span>
         </div>
 
         {/* Action button */}

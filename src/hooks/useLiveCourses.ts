@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react'
 import { api } from '@/lib/api'
 import type { Course, CourseModule, LessonType } from '@/data/types'
 import { CATALOG_COURSES } from '@/data/mock-data'
+import { MOCK_DATA_ENABLED } from '@/lib/mock-mode'
 
 export interface BackendCourse {
   id: string
@@ -97,12 +98,12 @@ export function useLiveCourses() {
         const cats = Array.from(new Set(mapped.map(c => c.category).filter(Boolean)))
         setCategories(['All', ...cats])
       } else {
-        setCourses(CATALOG_COURSES)
+        setCourses(MOCK_DATA_ENABLED ? CATALOG_COURSES : [])
       }
     } catch (err) {
-      console.warn('Backend API unavailable, falling back to cached seed courses:', err)
-      setCourses(CATALOG_COURSES)
-      setError('Using cached courses')
+      console.warn('Failed to load courses:', err)
+      setCourses(MOCK_DATA_ENABLED ? CATALOG_COURSES : [])
+      setError('Failed to load courses')
     } finally {
       setLoading(false)
     }
@@ -117,10 +118,9 @@ export function useLiveCourses() {
       await api.post(`/api/courses/${courseId}/enroll`)
       setCourses(prev => prev.map(c => c.id === courseId ? { ...c, enrolled: true } : c))
       return true
-    } catch {
-      // optimistic update locally
-      setCourses(prev => prev.map(c => c.id === courseId ? { ...c, enrolled: true } : c))
-      return true
+    } catch (err) {
+      console.error('Enrollment failed:', err)
+      return false
     }
   }
 
@@ -169,10 +169,11 @@ export function useLiveCourseDetail(courseId: string | number | null) {
         setModules(frontendModules)
       } catch (err) {
         if (!isMounted) return
-        console.warn(`Failed to fetch course ${courseId} from worker API, searching local catalog:`, err)
-        const fallback = CATALOG_COURSES.find(c => String(c.id) === String(courseId)) || CATALOG_COURSES[0]
-        setCourse(fallback)
-        setModules(fallback.modules ?? [])
+        console.warn(`Failed to fetch course ${courseId}:`, err)
+        const fallback = MOCK_DATA_ENABLED ? CATALOG_COURSES.find(c => String(c.id) === String(courseId)) : undefined
+        setCourse(fallback ?? null)
+        setModules(fallback?.modules ?? [])
+        if (!fallback) setError(err instanceof Error ? err.message : 'Course not found')
       } finally {
         if (isMounted) setLoading(false)
       }

@@ -21,7 +21,7 @@ export default function InfraHealthSection({ data, cf, onOpenCfSetup }: InfraHea
             </p>
           </div>
           <span className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-50 text-slate-600 border border-slate-200">
-            {data?.apiHealth.uniqueClients ?? 66} unique clients
+            {data?.apiHealth.uniqueClients ?? '—'} unique clients
           </span>
         </div>
 
@@ -33,7 +33,7 @@ export default function InfraHealthSection({ data, cf, onOpenCfSetup }: InfraHea
                 Average Latency
               </p>
               <p className="text-xl font-bold text-slate-900 mt-1">
-                {data?.apiHealth.averageLatencyMs.toFixed(2) || '180.05'} ms
+                {data?.apiHealth.averageLatencyMs ? `${data.apiHealth.averageLatencyMs.toFixed(2)} ms` : '—'}
               </p>
             </div>
 
@@ -42,7 +42,7 @@ export default function InfraHealthSection({ data, cf, onOpenCfSetup }: InfraHea
                 Max Latency
               </p>
               <p className="text-xl font-bold text-slate-900 mt-1">
-                {data?.apiHealth.maxLatencyMs || '1312'} ms
+                {data?.apiHealth.maxLatencyMs ? `${data.apiHealth.maxLatencyMs} ms` : '—'}
               </p>
             </div>
 
@@ -59,7 +59,7 @@ export default function InfraHealthSection({ data, cf, onOpenCfSetup }: InfraHea
           {/* Top Endpoints Right Panel */}
           <div className="space-y-3">
             {(data?.apiHealth.topEndpoints || []).map((ep) => {
-              const maxVal = data?.apiHealth.topEndpoints[0]?.count || 81
+              const maxVal = data?.apiHealth.topEndpoints[0]?.count || 1
               const pct = Math.round((ep.count / maxVal) * 100)
               return (
                 <div key={ep.endpoint} className="space-y-1">
@@ -218,8 +218,8 @@ export default function InfraHealthSection({ data, cf, onOpenCfSetup }: InfraHea
 
         {/* Edge Health Probes */}
         <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-          <span>D1 Latency: {cf?.edge.d1LatencyMs ?? 8}ms</span>
-          <span>KV Latency: {cf?.edge.kvLatencyMs ?? 3}ms</span>
+          <span>D1 Latency: {cf?.edge.d1LatencyMs ?? '—'}ms</span>
+          <span>KV Latency: {cf?.edge.kvLatencyMs ?? '—'}ms</span>
           <span>Colo: {cf?.edge.colo ?? 'SIN'}</span>
         </div>
       </div>

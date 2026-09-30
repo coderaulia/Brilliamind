@@ -56,7 +56,7 @@ export async function fetchCloudflareStats(
       d1LatencyMs = Date.now() - d1Start
     }
   } catch {
-    d1LatencyMs = 12
+    d1LatencyMs = 0
   }
 
   // 2. Probe KV Cache Latency
@@ -68,7 +68,7 @@ export async function fetchCloudflareStats(
       kvLatencyMs = Date.now() - kvStart
     }
   } catch {
-    kvLatencyMs = 4
+    kvLatencyMs = 0
   }
 
   const workerLatencyMs = Date.now() - startProbe
@@ -94,33 +94,33 @@ export async function fetchCloudflareStats(
       message: 'Cloudflare analytics credentials are not configured',
       timeframe,
       metrics: {
-        totalRequests: 344,
-        cachedRequests: 280,
-        uncachedRequests: 64,
-        cacheHitRatio: 81.4,
-        bandwidthBytes: 384000000,
-        cachedBandwidthBytes: 310000000,
-        uptimePercentage: 99.95,
-        errorRate: 7.56,
-        threats: 14,
-        pageViews: 554,
-        uniqueVisitors: 112,
+        totalRequests: 0,
+        cachedRequests: 0,
+        uncachedRequests: 0,
+        cacheHitRatio: 0,
+        bandwidthBytes: 0,
+        cachedBandwidthBytes: 0,
+        uptimePercentage: 0,
+        errorRate: 0,
+        threats: 0,
+        pageViews: 0,
+        uniqueVisitors: 0,
       },
       httpStatus: {
-        status2xx: 318,
-        status3xx: 12,
-        status4xx: 14,
+        status2xx: 0,
+        status3xx: 0,
+        status4xx: 0,
         status5xx: 0,
-        breakdown: { '200': 310, '204': 8, '301': 12, '404': 14 },
+        breakdown: {},
       },
       edge: {
         colo,
         httpProtocol,
         tlsVersion,
         workerUptimeSeconds,
-        workerLatencyMs: Math.max(workerLatencyMs, 14),
-        d1LatencyMs: Math.max(d1LatencyMs, 8),
-        kvLatencyMs: Math.max(kvLatencyMs, 3),
+        workerLatencyMs: workerLatencyMs,
+        d1LatencyMs: d1LatencyMs,
+        kvLatencyMs: kvLatencyMs,
       },
     }
   }
@@ -151,7 +151,7 @@ export async function fetchCloudflareStats(
           cacheHitRatio: 0,
           bandwidthBytes: 0,
           cachedBandwidthBytes: 0,
-          uptimePercentage: 99.9,
+          uptimePercentage: 0,
           errorRate: 0,
           threats: 0,
           pageViews: 0,
@@ -233,7 +233,7 @@ export async function fetchCloudflareStats(
 
     const cacheHitRatio = totalRequests > 0 ? Number(((cachedRequests / totalRequests) * 100).toFixed(1)) : 0
     const uptimePercentage =
-      totalRequests > 0 ? Number((((totalRequests - status5xx) / totalRequests) * 100).toFixed(2)) : 99.99
+      totalRequests > 0 ? Number((((totalRequests - status5xx) / totalRequests) * 100).toFixed(2)) : 0
     const errorRate =
       totalRequests > 0 ? Number((((status4xx + status5xx) / totalRequests) * 100).toFixed(2)) : 0
 
@@ -286,7 +286,7 @@ export async function fetchCloudflareStats(
         cacheHitRatio: 0,
         bandwidthBytes: 0,
         cachedBandwidthBytes: 0,
-        uptimePercentage: 99.9,
+        uptimePercentage: 0,
         errorRate: 0,
         threats: 0,
         pageViews: 0,

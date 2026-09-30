@@ -38,9 +38,9 @@ describe('Cloudflare Direct Analytics & Platform Telemetry Integration', () => {
     expect(stats.configured).toBe(false)
     expect(stats.status).toBe('unconfigured')
     expect(stats.message).toContain('credentials are not configured')
-    expect(stats.metrics.totalRequests).toBeGreaterThan(0)
+    expect(stats.metrics.totalRequests).toBe(0)
     expect(stats.edge.colo).toBe('SIN')
-    expect(stats.metrics.uptimePercentage).toBeGreaterThan(99)
+    expect(stats.metrics.uptimePercentage).toBe(0)
   })
 
   it('calculates uptime SLA and cache hit ratio accurately from Cloudflare API responses', async () => {

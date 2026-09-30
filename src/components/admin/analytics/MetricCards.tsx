@@ -15,7 +15,7 @@ export default function MetricCards({ data }: MetricCardsProps) {
           <div>
             <p className="text-xs font-medium text-slate-500">Requests</p>
             <p className="text-2xl font-bold text-slate-900 mt-1">
-              {data?.summary.requests.toLocaleString() || '344'}
+              {data?.summary.requests.toLocaleString() || '—'}
             </p>
           </div>
           <div className="w-8 h-8 rounded-lg bg-[#0F172A] flex items-center justify-center text-white">
@@ -23,7 +23,7 @@ export default function MetricCards({ data }: MetricCardsProps) {
           </div>
         </div>
         <p className="text-[11px] text-slate-400 mt-4">
-          {data?.summary.errorRate ?? 7.56}% error rate
+          {data?.summary.errorRate ?? '—'}% error rate
         </p>
       </div>
 
@@ -33,7 +33,7 @@ export default function MetricCards({ data }: MetricCardsProps) {
           <div>
             <p className="text-xs font-medium text-slate-500">Live visitors</p>
             <p className="text-2xl font-bold text-slate-900 mt-1">
-              {data?.summary.liveVisitors ?? 1}
+              {data?.summary.liveVisitors ?? '—'}
             </p>
           </div>
           <div className="w-8 h-8 rounded-lg bg-[#0F172A] flex items-center justify-center text-white">
@@ -41,7 +41,7 @@ export default function MetricCards({ data }: MetricCardsProps) {
           </div>
         </div>
         <p className="text-[11px] text-slate-400 mt-4">
-          {data?.summary.pageViews ?? 554} page views
+          {data?.summary.pageViews ?? '—'} page views
         </p>
       </div>
 
@@ -51,7 +51,7 @@ export default function MetricCards({ data }: MetricCardsProps) {
           <div>
             <p className="text-xs font-medium text-slate-500">Active learners</p>
             <p className="text-2xl font-bold text-slate-900 mt-1">
-              {data?.summary.activeUsers ?? 4}
+              {data?.summary.activeUsers ?? '—'}
             </p>
           </div>
           <div className="w-8 h-8 rounded-lg bg-[#0F172A] flex items-center justify-center text-white">
@@ -69,7 +69,7 @@ export default function MetricCards({ data }: MetricCardsProps) {
           <div>
             <p className="text-xs font-medium text-slate-500">Paid manual revenue</p>
             <p className="text-2xl font-bold text-slate-900 mt-1">
-              Rp {data?.summary.paidRevenue.toLocaleString() || '0'}
+              Rp {data?.summary.paidRevenue.toLocaleString() || '—'}
             </p>
           </div>
           <div className="w-8 h-8 rounded-lg bg-[#0F172A] flex items-center justify-center text-white">
@@ -87,7 +87,7 @@ export default function MetricCards({ data }: MetricCardsProps) {
           <div>
             <p className="text-xs font-medium text-slate-500">Funnel completion</p>
             <p className="text-2xl font-bold text-slate-900 mt-1">
-              {data?.summary.funnelCompletionRate ?? 71.67}%
+              {data?.summary.funnelCompletionRate ?? '—'}%
             </p>
           </div>
           <div className="w-8 h-8 rounded-lg bg-[#0F172A] flex items-center justify-center text-white">
@@ -95,7 +95,7 @@ export default function MetricCards({ data }: MetricCardsProps) {
           </div>
         </div>
         <p className="text-[11px] text-slate-400 mt-4">
-          {data?.summary.completedFromVisitors || '43 completed from 60 landing visitors'}
+          {data?.summary.completedFromVisitors || '—'}
         </p>
       </div>
 
@@ -105,7 +105,7 @@ export default function MetricCards({ data }: MetricCardsProps) {
           <div>
             <p className="text-xs font-medium text-slate-500">Returning visitors</p>
             <p className="text-2xl font-bold text-slate-900 mt-1">
-              {data?.summary.returningVisitorsRate ?? 4.46}%
+              {data?.summary.returningVisitorsRate ?? '—'}%
             </p>
           </div>
           <div className="w-8 h-8 rounded-lg bg-[#0F172A] flex items-center justify-center text-white">
@@ -113,7 +113,7 @@ export default function MetricCards({ data }: MetricCardsProps) {
           </div>
         </div>
         <p className="text-[11px] text-slate-400 mt-4">
-          {data?.summary.returningVisitorsCount ?? 5} returned in range
+          {data?.summary.returningVisitorsCount ?? '—'} returned in range
         </p>
       </div>
 
@@ -123,7 +123,7 @@ export default function MetricCards({ data }: MetricCardsProps) {
           <div>
             <p className="text-xs font-medium text-slate-500">Traffic sources</p>
             <p className="text-2xl font-bold text-slate-900 mt-1">
-              {data?.summary.trafficSourcesCount ?? 2}
+              {data?.summary.trafficSourcesCount ?? '—'}
             </p>
           </div>
           <div className="w-8 h-8 rounded-lg bg-[#0F172A] flex items-center justify-center text-white">
@@ -131,7 +131,7 @@ export default function MetricCards({ data }: MetricCardsProps) {
           </div>
         </div>
         <p className="text-[11px] text-slate-400 mt-4">
-          {data?.summary.topSourceVisitors ?? 111} visitors from top source
+          {data?.summary.topSourceVisitors ?? '—'} visitors from top source
         </p>
       </div>
 
@@ -141,7 +141,7 @@ export default function MetricCards({ data }: MetricCardsProps) {
           <div>
             <p className="text-xs font-medium text-slate-500">Frontend errors</p>
             <p className="text-2xl font-bold text-slate-900 mt-1">
-              {data?.summary.frontendErrorsCount ?? 18}
+              {data?.summary.frontendErrorsCount ?? '—'}
             </p>
           </div>
           <div className="w-8 h-8 rounded-lg bg-[#0F172A] flex items-center justify-center text-white">
@@ -149,7 +149,7 @@ export default function MetricCards({ data }: MetricCardsProps) {
           </div>
         </div>
         <p className="text-[11px] text-slate-400 mt-4">
-          {data?.summary.affectedVisitorsCount ?? 6} affected visitors
+          {data?.summary.affectedVisitorsCount ?? '—'} affected visitors
         </p>
       </div>
     </div>

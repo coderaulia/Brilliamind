@@ -2,6 +2,11 @@ import { useState } from 'react'
 import type { DiscussionComment, LearnerNote } from '@/data/mock-data'
 import { IconThumbsUp, IconFileText } from '@/components/ui/icons'
 
+
+function formatDate(value: string) {
+  const d = new Date(value)
+  return Number.isNaN(d.getTime()) ? value : d.toLocaleString()
+}
 interface PlayerTabsProps {
   courseDescription?: string
   currentLessonTitle: string
@@ -333,7 +338,7 @@ export default function PlayerTabs({
                         <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--text-primary)' }}>
                           {comm.authorName}
                         </div>
-                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{comm.createdAt}</div>
+                        <div style={{ fontSize: 11, color: 'var(--text-muted)' }}>{formatDate(comm.createdAt)}</div>
                       </div>
                     </div>
 

@@ -6,6 +6,24 @@ interface ActivityPanelsProps {
 }
 
 export default function ActivityPanels({ data, cf }: ActivityPanelsProps) {
+  const activation = data?.activation
+  const activationSteps = [
+    { label: 'Visitor', count: activation?.visitors ?? 0 },
+    { label: 'Enrolled', count: activation?.enrolled ?? 0 },
+    { label: 'Halfway (50%)', count: activation?.halfway ?? 0 },
+    { label: 'Certified (100%)', count: activation?.certified ?? 0 },
+  ]
+  const activationMax = Math.max(activationSteps[0].count, 1)
+  let biggestDrop: string | null = null
+  let maxDrop = 0
+  for (let i = 1; i < activationSteps.length; i++) {
+    const drop = activationSteps[i - 1].count - activationSteps[i].count
+    if (drop > maxDrop) {
+      maxDrop = drop
+      biggestDrop = `${activationSteps[i - 1].label} to ${activationSteps[i].label}`
+    }
+  }
+
   return (
     <>
       {/* Workspace / Learning Activation Funnel Banner */}
@@ -17,41 +35,27 @@ export default function ActivityPanels({ data, cf }: ActivityPanelsProps) {
               Signup cohorts in the selected range, followed through their first completed lesson.
             </p>
           </div>
-          <span className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
-            Biggest drop: Enrolled to 50% Milestone
-          </span>
+          {biggestDrop && (
+            <span className="px-2.5 py-1 rounded-md text-[11px] font-semibold bg-amber-50 text-amber-700 border border-amber-200">
+              Biggest drop: {biggestDrop}
+            </span>
+          )}
         </div>
 
         {/* Activation Stepper Bar */}
         <div className="grid grid-cols-1 sm:grid-cols-4 gap-3 pt-2">
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="text-[10px] font-semibold uppercase text-slate-400">1. Visitor</span>
-            <p className="text-base font-bold text-slate-900 mt-0.5">60</p>
-            <div className="w-full bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
-              <div className="bg-slate-900 h-full rounded-full w-full" />
+          {activationSteps.map((step, idx) => (
+            <div key={step.label} className="p-3 rounded-xl bg-slate-50 border border-slate-100">
+              <span className="text-[10px] font-semibold uppercase text-slate-400">{idx + 1}. {step.label}</span>
+              <p className="text-base font-bold text-slate-900 mt-0.5">{data ? step.count : '—'}</p>
+              <div className="w-full bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
+                <div
+                  className="bg-slate-900 h-full rounded-full"
+                  style={{ width: `${Math.min(100, Math.round((step.count / activationMax) * 100))}%` }}
+                />
+              </div>
             </div>
-          </div>
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="text-[10px] font-semibold uppercase text-slate-400">2. Enrolled</span>
-            <p className="text-base font-bold text-slate-900 mt-0.5">49</p>
-            <div className="w-full bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
-              <div className="bg-slate-900 h-full rounded-full w-[82%]" />
-            </div>
-          </div>
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="text-[10px] font-semibold uppercase text-slate-400">3. Halfway (50%)</span>
-            <p className="text-base font-bold text-slate-900 mt-0.5">28</p>
-            <div className="w-full bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
-              <div className="bg-slate-900 h-full rounded-full w-[47%]" />
-            </div>
-          </div>
-          <div className="p-3 rounded-xl bg-slate-50 border border-slate-100">
-            <span className="text-[10px] font-semibold uppercase text-slate-400">4. Certified (100%)</span>
-            <p className="text-base font-bold text-slate-900 mt-0.5">43</p>
-            <div className="w-full bg-slate-200 h-1.5 rounded-full mt-2 overflow-hidden">
-              <div className="bg-slate-900 h-full rounded-full w-[72%]" />
-            </div>
-          </div>
+          ))}
         </div>
       </div>
 
@@ -67,7 +71,7 @@ export default function ActivityPanels({ data, cf }: ActivityPanelsProps) {
               </p>
             </div>
             <span className="px-2.5 py-1 rounded-md text-[11px] font-medium bg-slate-50 text-slate-600 border border-slate-200">
-              {data?.cloudflare.metrics.uniqueVisitors || 112} unique visitors
+              {data?.cloudflare.metrics.uniqueVisitors ?? '—'} unique visitors
             </span>
           </div>
 
@@ -80,7 +84,7 @@ export default function ActivityPanels({ data, cf }: ActivityPanelsProps) {
               </p>
               <div className="space-y-3">
                 {(data?.topPages || []).slice(0, 7).map((p) => {
-                  const maxVal = data?.topPages[0]?.count || 124
+                  const maxVal = data?.topPages[0]?.count || 1
                   const pct = Math.round((p.count / maxVal) * 100)
                   return (
                     <div key={p.path} className="space-y-1">
@@ -109,7 +113,7 @@ export default function ActivityPanels({ data, cf }: ActivityPanelsProps) {
               </p>
               <div className="space-y-3">
                 {(data?.ctaClicks || []).map((cta) => {
-                  const maxVal = data?.ctaClicks[0]?.count || 26
+                  const maxVal = data?.ctaClicks[0]?.count || 1
                   const pct = Math.round((cta.count / maxVal) * 100)
                   return (
                     <div key={cta.label} className="space-y-1">
@@ -158,8 +162,8 @@ export default function ActivityPanels({ data, cf }: ActivityPanelsProps) {
           </div>
 
           <div className="pt-3 border-t border-slate-100 flex items-center justify-between text-[11px] text-slate-400">
-            <span>Active Edge Edge Node: {cf?.edge.colo || 'SIN'}</span>
-            <span>{cf?.edge.httpProtocol || 'HTTP/3'}</span>
+            <span>Active Edge Edge Node: {cf?.edge.colo || '—'}</span>
+            <span>{cf?.edge.httpProtocol || '—'}</span>
           </div>
         </div>
       </div>

@@ -3,7 +3,7 @@ import { zValidator } from '@hono/zod-validator'
 import { z } from 'zod'
 import { eq, and, sql } from 'drizzle-orm'
 import type { Env, Variables } from '../types'
-import { getDb, courses, sections, lessons, enrollments, userProgress, videoWatchLogs, profiles } from '../db'
+import { getDb, courses, sections, lessons, enrollments, userProgress, videoWatchLogs, profiles, certificates } from '../db'
 import { authMiddleware } from '../middleware/auth'
 import { generateUuid } from '../lib/crypto'
 import { sendEmail } from '../lib/email'
@@ -244,7 +244,21 @@ progressRouter.post('/lesson', zValidator('json', toggleLessonSchema), async (c)
             milestone100SentAt: nowStr,
           }).where(eq(enrollments.id, enrollment.id))
 
-          const certUuid = `bm-cert-${targetCourse?.slug || courseId}-${user.id.slice(0, 6)}`
+          // Issue (or reuse) the learner's certificate so the verify link resolves
+          const existingCert = await db.select({ certUuid: certificates.certUuid })
+            .from(certificates)
+            .where(and(eq(certificates.userId, user.id), eq(certificates.courseId, courseId)))
+            .get()
+          const certUuid = existingCert?.certUuid ?? generateUuid()
+          if (!existingCert) {
+            await db.insert(certificates).values({
+              id: generateUuid(),
+              userId: user.id,
+              courseId,
+              certUuid,
+              issuedAt: nowStr,
+            })
+          }
           const verifyUrl = `${appUrl}/verify/${certUuid}`
           const linkedinAddUrl = `https://www.linkedin.com/profile/add?startTask=CERTIFICATION_NAME&name=${encodeURIComponent(courseTitle)}&organizationName=BrilliaMind&certUrl=${encodeURIComponent(verifyUrl)}`
 

@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from 'react'
 import {
-  MOCK_DISCUSSIONS,
   type DiscussionComment,
   type LearnerNote,
 } from '@/data/mock-data'
@@ -48,22 +47,26 @@ export default function CoursePlayerPage({ courseId, onBack }: CoursePlayerPageP
   const [quizAnswers, setQuizAnswers] = useState<Record<string, number>>({})
   const [quizSubmitted, setQuizSubmitted] = useState(false)
 
-  // Notes State
-  const [notes, setNotes] = useState<LearnerNote[]>([
-    {
-      id: 'n-1',
-      lessonId: 'l1-1',
-      lessonTitle: 'Introduction',
-      timestampSec: 142,
-      content: 'Remember: Review key concepts and take structured notes during video walkthroughs.',
-      updatedAt: 'Today',
-    },
-  ])
+  // Notes State (private to this browser; persisted per course)
+  const notesKey = `bm_notes_${courseId}`
+  const [notes, setNotes] = useState<LearnerNote[]>(() => {
+    try {
+      return JSON.parse(localStorage.getItem(notesKey) || '[]') as LearnerNote[]
+    } catch {
+      return []
+    }
+  })
 
-  // Discussions State
-  const [discussions, setDiscussions] = useState<DiscussionComment[]>(
-    course?.discussions && course.discussions.length > 0 ? course.discussions : MOCK_DISCUSSIONS
-  )
+  useEffect(() => {
+    try {
+      localStorage.setItem(notesKey, JSON.stringify(notes))
+    } catch {
+      // storage unavailable (private mode / quota)
+    }
+  }, [notesKey, notes])
+
+  // Discussions State (loaded per lesson from the API)
+  const [discussions, setDiscussions] = useState<DiscussionComment[]>([])
 
   const currentIndex = allLessons.findIndex((item) => item.lesson.id === currentLessonId)
   const currentItem = allLessons[currentIndex] || allLessons[0]
@@ -71,6 +74,18 @@ export default function CoursePlayerPage({ courseId, onBack }: CoursePlayerPageP
 
   const prevLesson = currentIndex > 0 ? allLessons[currentIndex - 1].lesson : null
   const nextLesson = currentIndex < allLessons.length - 1 ? allLessons[currentIndex + 1].lesson : null
+
+  const currentLessonKey = currentLesson?.id
+
+  useEffect(() => {
+    if (!currentLessonKey) return
+    let active = true
+    setDiscussions([])
+    api.get<{ discussions: DiscussionComment[] }>(`/api/discussions/lesson/${encodeURIComponent(currentLessonKey)}`)
+      .then((res) => { if (active) setDiscussions(res.discussions) })
+      .catch((err) => { console.warn('Failed to load discussions:', err) })
+    return () => { active = false }
+  }, [currentLessonKey])
 
   // Reset quiz on lesson switch
   useEffect(() => {
@@ -81,7 +96,7 @@ export default function CoursePlayerPage({ courseId, onBack }: CoursePlayerPageP
   const markComplete = async (lessonId: string) => {
     setCompletedLessons((prev) => ({ ...prev, [lessonId]: true }))
     try {
-      await api.post('/api/progress/toggle-lesson', { lessonId, completed: true })
+      await api.post('/api/progress/lesson', { lessonId, completed: true })
     } catch {
       // ignore offline error
     }
@@ -97,22 +112,23 @@ export default function CoursePlayerPage({ courseId, onBack }: CoursePlayerPageP
       lessonId: currentLesson.id,
       lessonTitle: currentLesson.title,
       content,
-      updatedAt: 'Just now',
+      updatedAt: new Date().toLocaleString(),
     }
     setNotes((prev) => [note, ...prev])
   }
 
-  const handleAddQuestion = (content: string) => {
-    const comment: DiscussionComment = {
-      id: `comm-${Date.now()}`,
-      authorName: 'Learner',
-      authorAvatar: 'L',
-      authorRole: 'Learner',
-      createdAt: 'Just now',
-      content,
-      upvotes: 0,
+  const handleAddQuestion = async (content: string) => {
+    if (!currentLesson) return
+    try {
+      const res = await api.post<{ discussion: DiscussionComment }>(
+        `/api/discussions/lesson/${encodeURIComponent(currentLesson.id)}`,
+        { body: content }
+      )
+      setDiscussions((prev) => [res.discussion, ...prev])
+    } catch (err) {
+      console.error('Failed to post question:', err)
+      alert('Could not post your question. Please try again.')
     }
-    setDiscussions((prev) => [comment, ...prev])
   }
 
   const handleToggleUpvote = (commentId: string) => {
@@ -160,7 +176,7 @@ export default function CoursePlayerPage({ courseId, onBack }: CoursePlayerPageP
   if (!course || !currentLesson) {
     return (
       <div style={{ width: '100vw', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', background: '#0C1526', color: '#fff', gap: 16 }}>
-        <p style={{ fontSize: 16, fontWeight: 600 }}>No lessons found for this course.</p>
+        <p style={{ fontSize: 16, fontWeight: 600 }}>{course ? 'No lessons found for this course.' : 'Course not found.'}</p>
         <button onClick={onBack} style={{ padding: '8px 16px', borderRadius: 8, background: '#2dd4bf', color: '#0C1526', border: 'none', cursor: 'pointer', fontWeight: 700 }}>
           Return to Dashboard
         </button>
