@@ -1,43 +1,36 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, lazy, Suspense } from 'react'
 import { BrowserRouter, Routes, Route, useNavigate, useParams, Navigate, useLocation } from 'react-router-dom'
 import { useAuthStore } from '@/stores/auth'
 import { trackPageView } from '@/lib/analytics'
-
 import LandingPage from '@/pages/LandingPage'
-import OnboardingPage from '@/pages/OnboardingPage'
-
-// Auth Pages
 import LoginPage from '@/pages/auth/LoginPage'
-import InstructorRegisterPage from '@/pages/auth/InstructorRegisterPage'
-import AcceptInvitePage from '@/pages/auth/AcceptInvitePage'
-import ForgotPasswordPage from '@/pages/auth/ForgotPasswordPage'
-import ResetPasswordPage from '@/pages/auth/ResetPasswordPage'
-
-// Admin Pages
-import AdminDashboardPage from '@/pages/admin/AdminDashboardPage'
-import AdminAnalyticsPage from '@/pages/admin/AdminAnalyticsPage'
-
-// Instructor Pages
-import CourseManagerPage from '@/pages/instructor/CourseManagerPage'
-import CourseEditorPage from '@/pages/instructor/CourseEditorPage'
-import CourseAnalyticsPage from '@/pages/instructor/CourseAnalyticsPage'
-
-// Learner Pages
-import AppShell, { useTheme, type PageId } from '@/components/layout/AppShell'
-import DashboardPage from '@/pages/learner/DashboardPage'
-import MyCoursesPage from '@/pages/learner/MyCoursesPage'
-import CatalogPage from '@/pages/learner/CatalogPage'
-import CalendarPage from '@/pages/learner/CalendarPage'
-import CertificatesPage from '@/pages/learner/CertificatesPage'
-import SettingsPage from '@/pages/learner/SettingsPage'
-import CoursePlayerPage from '@/pages/learner/CoursePlayerPage'
-import VerifyCertificatePage from '@/pages/public/VerifyCertificatePage'
-import PrivacyPolicyPage from '@/pages/public/PrivacyPolicyPage'
-import TermsOfServicePage from '@/pages/public/TermsOfServicePage'
-import FAQPage from '@/pages/public/FAQPage'
-import DataSafetyPage from '@/pages/public/DataSafetyPage'
+import AppShell, { type PageId } from '@/components/layout/AppShell'
+import { useTheme } from '@/hooks/useTheme'
 import CourseDetailModal from '@/components/course/CourseDetailModal'
 import { useLiveCourses, useLiveCourseDetail } from '@/hooks/useLiveCourses'
+
+const OnboardingPage = lazy(() => import('@/pages/OnboardingPage'))
+const InstructorRegisterPage = lazy(() => import('@/pages/auth/InstructorRegisterPage'))
+const AcceptInvitePage = lazy(() => import('@/pages/auth/AcceptInvitePage'))
+const ForgotPasswordPage = lazy(() => import('@/pages/auth/ForgotPasswordPage'))
+const ResetPasswordPage = lazy(() => import('@/pages/auth/ResetPasswordPage'))
+const AdminDashboardPage = lazy(() => import('@/pages/admin/AdminDashboardPage'))
+const AdminAnalyticsPage = lazy(() => import('@/pages/admin/AdminAnalyticsPage'))
+const CourseManagerPage = lazy(() => import('@/pages/instructor/CourseManagerPage'))
+const CourseEditorPage = lazy(() => import('@/pages/instructor/CourseEditorPage'))
+const CourseAnalyticsPage = lazy(() => import('@/pages/instructor/CourseAnalyticsPage'))
+const DashboardPage = lazy(() => import('@/pages/learner/DashboardPage'))
+const MyCoursesPage = lazy(() => import('@/pages/learner/MyCoursesPage'))
+const CatalogPage = lazy(() => import('@/pages/learner/CatalogPage'))
+const CalendarPage = lazy(() => import('@/pages/learner/CalendarPage'))
+const CertificatesPage = lazy(() => import('@/pages/learner/CertificatesPage'))
+const SettingsPage = lazy(() => import('@/pages/learner/SettingsPage'))
+const CoursePlayerPage = lazy(() => import('@/pages/learner/CoursePlayerPage'))
+const VerifyCertificatePage = lazy(() => import('@/pages/public/VerifyCertificatePage'))
+const PrivacyPolicyPage = lazy(() => import('@/pages/public/PrivacyPolicyPage'))
+const TermsOfServicePage = lazy(() => import('@/pages/public/TermsOfServicePage'))
+const FAQPage = lazy(() => import('@/pages/public/FAQPage'))
+const DataSafetyPage = lazy(() => import('@/pages/public/DataSafetyPage'))
 
 function StandaloneCoursePlayer() {
   const { courseId } = useParams<{ courseId: string }>()
@@ -108,7 +101,7 @@ function LearnerApp() {
   return (
     <>
       <AppShell activePage={activePage} onNav={setActivePage} variant={variant}>
-        {renderPage()}
+        <Suspense fallback={null}>{renderPage()}</Suspense>
       </AppShell>
 
       {inspectingCourse && (
@@ -162,6 +155,7 @@ export default function App() {
   return (
     <BrowserRouter>
       <RouteTracker />
+      <Suspense fallback={<div className="min-h-screen bg-[#0F172A]" />}>
       <Routes>
         {/* Public & Onboarding */}
         <Route path="/" element={<LandingPage />} />
@@ -250,6 +244,7 @@ export default function App() {
         {/* 404 Catch All */}
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
+      </Suspense>
     </BrowserRouter>
   )
 }

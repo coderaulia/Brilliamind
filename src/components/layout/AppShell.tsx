@@ -1,4 +1,4 @@
-import { useState, type ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import AppSidebar from './AppSidebar'
 import AppTopNav from './AppTopNav'
 import { THEMES, type ThemeVariant } from '@/constants/design-tokens'
@@ -41,10 +41,4 @@ export default function AppShell({
       </div>
     </div>
   )
-}
-
-// Theme switcher hook — shared across pages
-export function useTheme(defaultVariant: ThemeVariant = 'Deep Navy') {
-  const [variant, setVariant] = useState<ThemeVariant>(defaultVariant)
-  return { variant, setVariant }
 }

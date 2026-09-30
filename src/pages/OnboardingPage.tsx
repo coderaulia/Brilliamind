@@ -1,4 +1,4 @@
-import { useState, useEffect, CSSProperties } from 'react'
+import { useState, useEffect, useCallback, CSSProperties } from 'react'
 import { useNavigate } from 'react-router-dom'
 
 // ─── Data ────────────────────────────────────────────────────────────────────
@@ -458,21 +458,21 @@ export default function OnboardingPage() {
 
   const update = (patch: Partial<OnboardingData>) => setData(prev => ({ ...prev, ...patch }))
 
-  const canNext = () => {
+  const canNext = useCallback(() => {
     if (step === 1) return data.name.trim().length > 0
     if (step === 2) return !!data.goal
     if (step === 3) return data.topics.length > 0
     if (step === 4) return !!data.level
     if (step === 5) return !!data.pace
     return true
-  }
+  }, [step, data])
 
-  const next = () => {
+  const next = useCallback(() => {
     if (!canNext()) return
     if (step === 5) setShowConfetti(true)
     setDir('forward')
     setStep(s => Math.min(s + 1, TOTAL_STEPS))
-  }
+  }, [canNext, step])
 
   const back = () => {
     if (step === 1) return
@@ -486,7 +486,7 @@ export default function OnboardingPage() {
     const handler = (e: KeyboardEvent) => { if (e.key === 'Enter' && step < TOTAL_STEPS) next() }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [step, data])
+  }, [step, next])
 
   const isLast = step === TOTAL_STEPS
 

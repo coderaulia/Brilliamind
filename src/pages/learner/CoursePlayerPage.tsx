@@ -1,8 +1,6 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import {
   MOCK_DISCUSSIONS,
-  type Lesson,
-  type CourseModule,
   type DiscussionComment,
   type LearnerNote,
 } from '@/data/mock-data'
@@ -25,12 +23,10 @@ export default function CoursePlayerPage({ courseId, onBack }: CoursePlayerPageP
   const { course, modules, loading } = useLiveCourseDetail(courseId)
 
   // Flatten lessons for navigation
-  const allLessons: { lesson: Lesson; module: CourseModule }[] = []
-  modules.forEach((m) => {
-    m.lessons.forEach((l) => {
-      allLessons.push({ lesson: l, module: m })
-    })
-  })
+  const allLessons = useMemo(
+    () => modules.flatMap((m) => m.lessons.map((l) => ({ lesson: l, module: m }))),
+    [modules]
+  )
 
   const [currentLessonId, setCurrentLessonId] = useState<string>('')
   const [completedLessons, setCompletedLessons] = useState<Record<string, boolean>>({})
