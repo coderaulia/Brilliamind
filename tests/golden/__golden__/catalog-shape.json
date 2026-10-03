@@ -1,0 +1,119 @@
+[
+  {
+    "id": "crs-vanaila-excel-01",
+    "slug": "vanaila-microsoft-excel-training-tutorials-for-beginners-intermediate-and-advanced-learners",
+    "category": "Excel",
+    "sections": [
+      100
+    ]
+  },
+  {
+    "id": "crs-vanaila-excel-02",
+    "slug": "vanaila-excel-introduction-learn-excel-basics",
+    "category": "Excel",
+    "sections": [
+      36
+    ]
+  },
+  {
+    "id": "crs-vanaila-excel-03",
+    "slug": "vanaila-excel-intermediate-functions-features",
+    "category": "Excel",
+    "sections": [
+      17
+    ]
+  },
+  {
+    "id": "crs-vanaila-excel-04",
+    "slug": "vanaila-excel-power-query",
+    "category": "Excel",
+    "sections": [
+      21
+    ]
+  },
+  {
+    "id": "crs-vanaila-sheets-01",
+    "slug": "vanaila-google-sheets-for-beginners",
+    "category": "Spreadsheet",
+    "sections": [
+      10
+    ]
+  },
+  {
+    "id": "crs-vanaila-sheets-02",
+    "slug": "vanaila-google-sheets-advanced-tutorials",
+    "category": "Spreadsheet",
+    "sections": [
+      35
+    ]
+  },
+  {
+    "id": "crs-vanaila-sheets-03",
+    "slug": "vanaila-google-sheets-fundamentals",
+    "category": "Spreadsheet",
+    "sections": [
+      8
+    ]
+  },
+  {
+    "id": "crs-vanaila-sales-01",
+    "slug": "vanaila-sales-marketing-dashboard",
+    "category": "Sales",
+    "sections": [
+      7
+    ]
+  },
+  {
+    "id": "crs-vanaila-sales-02",
+    "slug": "vanaila-kalodata-tutorials-tiktok-shop-product-market-research",
+    "category": "Sales",
+    "sections": [
+      8,
+      7,
+      7
+    ]
+  },
+  {
+    "id": "crs-vanaila-sales-03",
+    "slug": "vanaila-tiktok-shop-affiliate-mastery",
+    "category": "Sales",
+    "sections": [
+      10,
+      10,
+      10,
+      15,
+      13
+    ]
+  },
+  {
+    "id": "crs-vanaila-excel-05",
+    "slug": "vanaila-excel-pivot-tables-masterclass-leila-gharani",
+    "category": "Excel",
+    "sections": [
+      5,
+      6
+    ]
+  },
+  {
+    "id": "crs-vanaila-pm-01",
+    "slug": "vanaila-practical-project-management-ms-excel",
+    "category": "Project Management",
+    "sections": [
+      4,
+      6,
+      8
+    ]
+  },
+  {
+    "id": "crs-vanaila-pm-02",
+    "slug": "vanaila-advanced-excel-project-management-engineeringly",
+    "category": "Project Management",
+    "sections": [
+      15,
+      16,
+      15,
+      16,
+      16
+    ]
+  }
+]

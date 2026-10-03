@@ -70,9 +70,8 @@ pnpm run type-check          # tsc --noEmit
 pnpm run lint                # ESLint code verification
 
 # Testing & Quality Assurance
-pnpm run test                # Run Vitest test suites (25 unit & integration tests)
-pnpm run test:watch          # Run Vitest in interactive watch mode
-pnpm run test:system         # Run live end-to-end API verification script
+pnpm run test                # Vitest: integrity + golden tests only
+pnpm run test:e2e            # Playwright full E2E (spins up local worker + vite)
 
 # Database & Migrations (D1 + Drizzle)
 pnpm run db:generate         # Generate SQL migrations from Drizzle schema
