@@ -8,9 +8,14 @@ import { vanailaInstructor, vanailaCourses } from '../db/seeds/vanaila-seed-data
 const seedRouter = new Hono<{ Bindings: Env; Variables: Variables }>()
 
 seedRouter.post('/', async (c) => {
-  // Security guard: Disable database seeding in production environments
-  const appUrl = c.env.APP_URL || ''
-  const isDev = appUrl.includes('localhost') || appUrl.includes('127.0.0.1') || !appUrl
+  // Security guard: seeding only when APP_URL is explicitly a local host. Unset APP_URL is refused.
+  let isDev = false
+  try {
+    const { hostname } = new URL(c.env.APP_URL || '')
+    isDev = hostname === 'localhost' || hostname === '127.0.0.1' || hostname === '[::1]'
+  } catch {
+    isDev = false
+  }
   if (!isDev) {
     return c.json({ error: 'Forbidden: Database seeding is disabled in production environments' }, 403)
   }

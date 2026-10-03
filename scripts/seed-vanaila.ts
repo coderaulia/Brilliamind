@@ -2,12 +2,11 @@
  * Vanaila Course Seed Runner
  *
  * Seeds instructor "Vanaila Course" and all extracted YouTube training series:
- * - 3 Categories: Excel, Spreadsheet, Sales
- * - 8 Series (Courses)
- * - 234 Video Lessons
+ * - Categories, courses and lessons from vanaila-seed-data.ts
  *
  * Usage:
  *   npx tsx scripts/seed-vanaila.ts
+ *   pnpm tsx scripts/generate-vanaila-sql.ts   (regenerate SQL after editing seed data)
  *   wrangler d1 execute DB --local --file=worker/db/seeds/vanaila_seed.sql
  */
 
