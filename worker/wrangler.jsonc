@@ -26,5 +26,33 @@
   "vars": {
     "APP_URL": "http://localhost:5173",
     "R2_PUBLIC_URL": "https://media.brilliamind.id"
+  },
+  "env": {
+    "production": {
+      "vars": {
+        "APP_URL": "https://brilliamind.id",
+        "R2_PUBLIC_URL": "https://media.brilliamind.id"
+      },
+      "d1_databases": [
+        {
+          "binding": "DB",
+          "database_name": "brilliamind-db",
+          "database_id": "REPLACE_WITH_PROD_D1_DATABASE_ID",
+          "migrations_dir": "db/migrations"
+        }
+      ],
+      "r2_buckets": [
+        {
+          "binding": "MEDIA_BUCKET",
+          "bucket_name": "brilliamind-media"
+        }
+      ],
+      "kv_namespaces": [
+        {
+          "binding": "KV",
+          "id": "REPLACE_WITH_PROD_KV_NAMESPACE_ID"
+        }
+      ]
+    }
   }
 }

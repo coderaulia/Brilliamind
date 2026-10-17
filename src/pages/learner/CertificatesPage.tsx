@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react'
+import { jsPDF } from 'jspdf'
 import { MOCK_CERTIFICATES, type CertificateItem } from '@/data/mock-data'
 import { api } from '@/lib/api'
 import { MOCK_DATA_ENABLED } from '@/lib/mock-mode'
@@ -33,7 +34,113 @@ export default function CertificatesPage() {
   }
 
   const handleDownloadPdf = (cert: CertificateItem) => {
-    alert(`Generating high-resolution official PDF for certificate "${cert.courseTitle}"...`)
+    const doc = new jsPDF({ orientation: 'landscape', unit: 'mm', format: 'a4' })
+    const pageW = 297
+    const pageH = 210
+
+    // Cream diploma background
+    doc.setFillColor(250, 250, 249)
+    doc.rect(0, 0, pageW, pageH, 'F')
+
+    // Outer & inner teal border
+    doc.setDrawColor(13, 148, 136)
+    doc.setLineWidth(2.2)
+    doc.rect(12, 12, pageW - 24, pageH - 24)
+    doc.setLineWidth(0.6)
+    doc.rect(15, 15, pageW - 30, pageH - 30)
+
+    // Platform Header
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(11)
+    doc.setTextColor(13, 148, 136)
+    doc.text('BRILLIAMIND LEARNING PLATFORM', pageW / 2, 36, { align: 'center' })
+
+    // Title
+    doc.setFont('times', 'bold')
+    doc.setFontSize(28)
+    doc.setTextColor(15, 23, 42)
+    doc.text('CERTIFICATE OF ACCOMPLISHMENT', pageW / 2, 54, { align: 'center' })
+
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(12)
+    doc.setTextColor(100, 116, 139)
+    doc.text('This official credential certifies that', pageW / 2, 68, { align: 'center' })
+
+    // Recipient Name
+    doc.setFont('times', 'bolditalic')
+    doc.setFontSize(30)
+    doc.setTextColor(15, 23, 42)
+    doc.text(cert.recipientName, pageW / 2, 86, { align: 'center' })
+
+    doc.setDrawColor(13, 148, 136)
+    doc.setLineWidth(0.8)
+    doc.line(pageW / 2 - 55, 90, pageW / 2 + 55, 90)
+
+    // Course completion statement
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(12)
+    doc.setTextColor(71, 85, 105)
+    doc.text(
+      'has successfully completed all coursework, assessments, and practical requirements for',
+      pageW / 2,
+      104,
+      { align: 'center' }
+    )
+
+    // Course Title
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(20)
+    doc.setTextColor(15, 23, 42)
+    doc.text(cert.courseTitle, pageW / 2, 118, { align: 'center', maxWidth: 230 })
+
+    // Grade & Skills
+    if (cert.grade) {
+      doc.setFont('helvetica', 'bold')
+      doc.setFontSize(11)
+      doc.setTextColor(13, 148, 136)
+      doc.text(`Standing: ${cert.grade}`, pageW / 2, 130, { align: 'center' })
+    }
+
+    // Signatures & Issue Date
+    const sigY = 165
+    doc.setDrawColor(203, 213, 225)
+    doc.setLineWidth(0.4)
+    doc.line(45, sigY - 8, 115, sigY - 8)
+    doc.line(pageW - 115, sigY - 8, pageW - 45, sigY - 8)
+
+    doc.setFont('times', 'italic')
+    doc.setFontSize(15)
+    doc.setTextColor(30, 41, 59)
+    doc.text(cert.instructorName || 'Lead Instructor', 80, sigY - 12, { align: 'center' })
+
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(10)
+    doc.setTextColor(100, 116, 139)
+    doc.text(cert.instructorRole || 'Course Instructor', 80, sigY - 2, { align: 'center' })
+
+    const formattedDate = new Date(cert.issueDate).toLocaleDateString('en-US', {
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    })
+    doc.setFont('helvetica', 'bold')
+    doc.setFontSize(12)
+    doc.setTextColor(30, 41, 59)
+    doc.text(formattedDate, pageW - 80, sigY - 12, { align: 'center' })
+
+    doc.setFontSize(10)
+    doc.setTextColor(100, 116, 139)
+    doc.text('Date of Issue', pageW - 80, sigY - 2, { align: 'center' })
+
+    // Verification footer
+    const verifyUrl = `${window.location.origin}/verify/${cert.uuid}`
+    doc.setFont('helvetica', 'normal')
+    doc.setFontSize(9)
+    doc.setTextColor(148, 163, 184)
+    doc.text(`Certificate ID: ${cert.uuid}  •  Verify at: ${verifyUrl}`, pageW / 2, 186, { align: 'center' })
+
+    const safeSlug = cert.courseTitle.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+    doc.save(`BrilliaMind-Certificate-${safeSlug || cert.uuid}.pdf`)
   }
 
   return (

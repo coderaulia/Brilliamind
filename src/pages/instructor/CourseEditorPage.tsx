@@ -1,13 +1,15 @@
 import { useState, useEffect, useCallback } from 'react'
-import { useParams, Link } from 'react-router-dom'
+import { useParams, Link, useNavigate } from 'react-router-dom'
 import { api } from '@/lib/api'
 import {
   ArrowLeft,
   Plus,
   Play,
   Video,
+  FileText,
   CheckCircle2,
   Trash2,
+  Pencil,
   Eye,
   ExternalLink,
 } from 'lucide-react'
@@ -21,6 +23,8 @@ interface Lesson {
   title: string
   type: string
   videoUrl: string | null
+  pdfUrl?: string | null
+  contentJson?: Record<string, unknown> | null
   position: number
   isFreePreview: boolean
 }
@@ -47,6 +51,7 @@ interface CourseDetails {
 
 export default function CourseEditorPage() {
   const { id: courseId } = useParams<{ id: string }>()
+  const navigate = useNavigate()
 
   const [course, setCourse] = useState<CourseDetails | null>(null)
   const [sections, setSections] = useState<Section[]>([])
@@ -54,16 +59,20 @@ export default function CourseEditorPage() {
   const [error, setError] = useState<string | null>(null)
   const [saveStatus, setSaveStatus] = useState<string | null>(null)
 
-  // Section modal
+  // Section modal (add / edit)
   const [isSectionModalOpen, setIsSectionModalOpen] = useState(false)
+  const [editingSectionId, setEditingSectionId] = useState<string | null>(null)
   const [newSectionTitle, setNewSectionTitle] = useState('')
 
-  // Lesson modal
+  // Lesson modal (add / edit)
   const [activeSectionId, setActiveSectionId] = useState<string | null>(null)
+  const [editingLessonId, setEditingLessonId] = useState<string | null>(null)
   const [isLessonModalOpen, setIsLessonModalOpen] = useState(false)
   const [lessonTitle, setLessonTitle] = useState('')
-  const [lessonType] = useState<'youtube' | 'video'>('youtube')
+  const [lessonType, setLessonType] = useState<'youtube' | 'video' | 'text' | 'pdf'>('youtube')
   const [videoUrl, setVideoUrl] = useState('')
+  const [pdfUrl, setPdfUrl] = useState('')
+  const [articleText, setArticleText] = useState('')
   const [isFreePreview, setIsFreePreview] = useState(false)
 
   const fetchCourseData = useCallback(async () => {
@@ -133,39 +142,122 @@ export default function CourseEditorPage() {
     }
   }
 
-  const handleAddSection = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!courseId || !newSectionTitle) return
+  const handleDeleteCourse = async () => {
+    if (!courseId || !course) return
+    if (!confirm(`Are you sure you want to permanently delete "${course.title}"?`)) return
     try {
-      await api.post(`/api/courses/${courseId}/sections`, {
-        title: newSectionTitle,
-        position: sections.length,
-      })
-      setNewSectionTitle('')
-      setIsSectionModalOpen(false)
-      fetchCourseData()
+      await api.delete(`/api/courses/${courseId}`)
+      navigate('/instructor/courses')
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to add section')
+      setError(err instanceof Error ? err.message : 'Failed to delete course')
     }
   }
 
-  const handleAddLesson = async (e: React.FormEvent) => {
+  const openAddSectionModal = () => {
+    setEditingSectionId(null)
+    setNewSectionTitle('')
+    setIsSectionModalOpen(true)
+  }
+
+  const openEditSectionModal = (section: Section) => {
+    setEditingSectionId(section.id)
+    setNewSectionTitle(section.title)
+    setIsSectionModalOpen(true)
+  }
+
+  const handleSaveSection = async (e: React.FormEvent) => {
     e.preventDefault()
-    if (!activeSectionId || !lessonTitle) return
+    if (!courseId || !newSectionTitle.trim()) return
     try {
-      await api.post(`/api/courses/sections/${activeSectionId}/lessons`, {
-        title: lessonTitle,
-        type: lessonType,
-        videoUrl: videoUrl || undefined,
-        isFreePreview,
-        position: 0,
-      })
+      if (editingSectionId) {
+        await api.put(`/api/courses/sections/${editingSectionId}`, {
+          title: newSectionTitle.trim(),
+        })
+      } else {
+        await api.post(`/api/courses/${courseId}/sections`, {
+          title: newSectionTitle.trim(),
+          position: sections.length,
+        })
+      }
+      setNewSectionTitle('')
+      setEditingSectionId(null)
+      setIsSectionModalOpen(false)
+      fetchCourseData()
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to save section')
+    }
+  }
+
+  const handleDeleteSection = async (sectionId: string) => {
+    if (!confirm('Delete this section and all lessons inside it?')) return
+    try {
+      await api.delete(`/api/courses/sections/${sectionId}`)
+      fetchCourseData()
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : 'Failed to delete section')
+    }
+  }
+
+  const openAddLessonModal = (sectionId: string) => {
+    setActiveSectionId(sectionId)
+    setEditingLessonId(null)
+    setLessonTitle('')
+    setLessonType('youtube')
+    setVideoUrl('')
+    setPdfUrl('')
+    setArticleText('')
+    setIsFreePreview(false)
+    setIsLessonModalOpen(true)
+  }
+
+  const openEditLessonModal = (lesson: Lesson) => {
+    setActiveSectionId(lesson.sectionId)
+    setEditingLessonId(lesson.id)
+    setLessonTitle(lesson.title)
+    const normalizedType = (lesson.type === 'text' || lesson.type === 'pdf' || lesson.type === 'video')
+      ? lesson.type
+      : 'youtube'
+    setLessonType(normalizedType)
+    setVideoUrl(lesson.videoUrl || '')
+    setPdfUrl(lesson.pdfUrl || '')
+    setArticleText(typeof lesson.contentJson?.text === 'string' ? lesson.contentJson.text : '')
+    setIsFreePreview(Boolean(lesson.isFreePreview))
+    setIsLessonModalOpen(true)
+  }
+
+  const handleSaveLesson = async (e: React.FormEvent) => {
+    e.preventDefault()
+    if (!activeSectionId || !lessonTitle.trim()) return
+    const targetSection = sections.find(s => s.id === activeSectionId)
+    const nextPosition = targetSection ? targetSection.lessons.length : 0
+
+    const payload = {
+      title: lessonTitle.trim(),
+      type: lessonType,
+      videoUrl: (lessonType === 'youtube' || lessonType === 'video') ? (videoUrl.trim() || undefined) : undefined,
+      pdfUrl: lessonType === 'pdf' ? (pdfUrl.trim() || undefined) : undefined,
+      contentJson: lessonType === 'text' ? { text: articleText } : undefined,
+      isFreePreview,
+    }
+
+    try {
+      if (editingLessonId) {
+        await api.put(`/api/courses/lessons/${editingLessonId}`, payload)
+      } else {
+        await api.post(`/api/courses/sections/${activeSectionId}/lessons`, {
+          ...payload,
+          position: nextPosition,
+        })
+      }
       setLessonTitle('')
       setVideoUrl('')
+      setPdfUrl('')
+      setArticleText('')
+      setEditingLessonId(null)
       setIsLessonModalOpen(false)
       fetchCourseData()
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'Failed to add video lesson')
+      setError(err instanceof Error ? err.message : 'Failed to save lesson')
     }
   }
 
@@ -221,7 +313,7 @@ export default function CourseEditorPage() {
             <h1 className="text-sm font-bold text-slate-100 flex items-center gap-2">
               {course.title}
             </h1>
-            <span className="text-[11px] text-slate-400">Curriculum & Video Lesson Builder</span>
+            <span className="text-[11px] text-slate-400">Curriculum & Lesson Builder</span>
           </div>
         </div>
 
@@ -311,18 +403,28 @@ export default function CourseEditorPage() {
                 className="w-full px-3 py-2 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40 resize-none"
               />
             </div>
+
+            <div className="pt-2 border-t border-slate-800">
+              <button
+                type="button"
+                onClick={handleDeleteCourse}
+                className="w-full py-2 px-3 rounded-xl bg-rose-500/10 hover:bg-rose-500/20 border border-rose-500/20 text-rose-400 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors"
+              >
+                <Trash2 className="w-3.5 h-3.5" /> Delete Course
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Right Column: Curriculum Sections & Video Lessons */}
+        {/* Right Column: Curriculum Sections & Lessons */}
         <div className="lg:col-span-2 space-y-6">
           <div className="flex items-center justify-between">
             <div>
               <h2 className="text-base font-bold text-slate-100">Course Curriculum</h2>
-              <p className="text-xs text-slate-400">Organize sections and attach third-party YouTube videos</p>
+              <p className="text-xs text-slate-400">Organize sections and attach video, article, or PDF lessons</p>
             </div>
             <button
-              onClick={() => setIsSectionModalOpen(true)}
+              onClick={openAddSectionModal}
               className="flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/20 transition-all"
             >
               <Plus className="w-3.5 h-3.5" /> Add Section
@@ -340,7 +442,7 @@ export default function CourseEditorPage() {
                   key={section.id}
                   className="rounded-2xl bg-[#1E293B]/90 border border-slate-800 overflow-hidden shadow-lg"
                 >
-                  <div className="p-4 bg-slate-900/60 border-b border-slate-800 flex items-center justify-between">
+                  <div className="p-4 bg-slate-900/60 border-b border-slate-800 flex items-center justify-between gap-2">
                     <div className="flex items-center gap-2">
                       <span className="w-6 h-6 rounded-lg bg-indigo-500/10 text-indigo-400 text-xs font-bold flex items-center justify-center">
                         {secIdx + 1}
@@ -348,22 +450,35 @@ export default function CourseEditorPage() {
                       <h3 className="font-semibold text-sm text-slate-100">{section.title}</h3>
                     </div>
 
-                    <button
-                      onClick={() => {
-                        setActiveSectionId(section.id)
-                        setIsLessonModalOpen(true)
-                      }}
-                      className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 text-xs font-medium transition-colors"
-                    >
-                      <Plus className="w-3.5 h-3.5" /> Add YouTube Lesson
-                    </button>
+                    <div className="flex items-center gap-1.5">
+                      <button
+                        onClick={() => openEditSectionModal(section)}
+                        className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors"
+                        title="Rename Section"
+                      >
+                        <Pencil className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => handleDeleteSection(section.id)}
+                        className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
+                        title="Delete Section"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                      <button
+                        onClick={() => openAddLessonModal(section.id)}
+                        className="flex items-center gap-1 px-3 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-indigo-300 text-xs font-medium transition-colors"
+                      >
+                        <Plus className="w-3.5 h-3.5" /> Add Lesson
+                      </button>
+                    </div>
                   </div>
 
                   {/* Lessons List in Section */}
                   <div className="p-3 divide-y divide-slate-800/60 space-y-1">
                     {section.lessons.length === 0 ? (
                       <p className="text-xs text-slate-500 py-3 text-center italic">
-                        No video lessons in this section yet.
+                        No lessons in this section yet.
                       </p>
                     ) : (
                       section.lessons.map((lesson) => (
@@ -373,11 +488,18 @@ export default function CourseEditorPage() {
                         >
                           <div className="flex items-center gap-3 flex-1 min-w-0">
                             <div className="w-8 h-8 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-400 flex items-center justify-center shrink-0">
-                              <Play className="w-4 h-4 fill-current" />
+                              {lesson.type === 'text' || lesson.type === 'pdf' ? (
+                                <FileText className="w-4 h-4" />
+                              ) : (
+                                <Play className="w-4 h-4 fill-current" />
+                              )}
                             </div>
                             <div className="truncate">
                               <div className="flex items-center gap-2">
                                 <h4 className="text-xs font-medium text-slate-200 truncate">{lesson.title}</h4>
+                                <span className="text-[10px] uppercase px-1.5 py-0.5 rounded bg-slate-800 text-slate-400">
+                                  {lesson.type}
+                                </span>
                                 {lesson.isFreePreview && (
                                   <span className="text-[10px] px-1.5 py-0.2 rounded bg-indigo-500/10 text-indigo-300 border border-indigo-500/20">
                                     Free Preview
@@ -385,23 +507,30 @@ export default function CourseEditorPage() {
                                 )}
                               </div>
                               <p className="text-[11px] text-slate-500 truncate font-mono mt-0.5">
-                                {lesson.videoUrl || 'No video link attached'}
+                                {lesson.videoUrl || lesson.pdfUrl || (lesson.type === 'text' ? 'Article content' : 'No media link attached')}
                               </p>
                             </div>
                           </div>
 
-                          <div className="flex items-center gap-2">
-                            {lesson.videoUrl && (
+                          <div className="flex items-center gap-1.5">
+                            {(lesson.videoUrl || lesson.pdfUrl) && (
                               <a
-                                href={lesson.videoUrl}
+                                href={lesson.videoUrl || lesson.pdfUrl || '#'}
                                 target="_blank"
                                 rel="noreferrer"
                                 className="p-1.5 rounded-lg text-slate-400 hover:text-slate-200 hover:bg-slate-800"
-                                title="Open Video Link"
+                                title="Open Media Link"
                               >
                                 <ExternalLink className="w-3.5 h-3.5" />
                               </a>
                             )}
+                            <button
+                              onClick={() => openEditLessonModal(lesson)}
+                              className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-300 hover:bg-slate-800 transition-colors"
+                              title="Edit Lesson"
+                            >
+                              <Pencil className="w-3.5 h-3.5" />
+                            </button>
                             <button
                               onClick={() => handleDeleteLesson(lesson.id)}
                               className="p-1.5 rounded-lg text-slate-500 hover:text-rose-400 hover:bg-rose-500/10 transition-colors"
@@ -420,12 +549,14 @@ export default function CourseEditorPage() {
           )}
         </div>
 
-        {/* Add Section Modal */}
+        {/* Add / Edit Section Modal */}
         {isSectionModalOpen && (
           <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-[#1E293B] border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
-              <h3 className="text-base font-bold text-slate-100">Add Curriculum Section</h3>
-              <form onSubmit={handleAddSection} className="space-y-4">
+              <h3 className="text-base font-bold text-slate-100">
+                {editingSectionId ? 'Rename Curriculum Section' : 'Add Curriculum Section'}
+              </h3>
+              <form onSubmit={handleSaveSection} className="space-y-4">
                 <div>
                   <label className="block text-xs font-medium text-slate-300 mb-1.5">Section Title</label>
                   <input
@@ -440,7 +571,7 @@ export default function CourseEditorPage() {
                 <div className="flex items-center justify-end gap-2 pt-2">
                   <button
                     type="button"
-                    onClick={() => setIsSectionModalOpen(false)}
+                    onClick={() => { setIsSectionModalOpen(false); setEditingSectionId(null) }}
                     className="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-slate-200"
                   >
                     Cancel
@@ -449,7 +580,7 @@ export default function CourseEditorPage() {
                     type="submit"
                     className="px-4 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold"
                   >
-                    Add Section
+                    {editingSectionId ? 'Save Changes' : 'Add Section'}
                   </button>
                 </div>
               </form>
@@ -457,15 +588,16 @@ export default function CourseEditorPage() {
           </div>
         )}
 
-        {/* Add YouTube Lesson Modal */}
+        {/* Add / Edit Lesson Modal */}
         {isLessonModalOpen && (
           <div className="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 flex items-center justify-center p-4">
             <div className="bg-[#1E293B] border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
               <h3 className="text-base font-bold text-slate-100 flex items-center gap-2">
-                <Video className="w-5 h-5 text-rose-400" /> Add YouTube / Video Lesson
+                <Video className="w-5 h-5 text-rose-400" />
+                {editingLessonId ? 'Edit Lesson' : 'Add Curriculum Lesson'}
               </h3>
 
-              <form onSubmit={handleAddLesson} className="space-y-4">
+              <form onSubmit={handleSaveLesson} className="space-y-4">
                 <div>
                   <label className="block text-xs font-medium text-slate-300 mb-1.5">Lesson Title</label>
                   <input
@@ -479,27 +611,77 @@ export default function CourseEditorPage() {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-medium text-slate-300 mb-1.5">
-                    YouTube Video URL or Direct MP4 Link
-                  </label>
-                  <input
-                    type="url"
-                    required
-                    value={videoUrl}
-                    onChange={(e) => setVideoUrl(e.target.value)}
-                    placeholder="https://www.youtube.com/watch?v=..."
+                  <label className="block text-xs font-medium text-slate-300 mb-1.5">Lesson Type</label>
+                  <select
+                    value={lessonType}
+                    onChange={(e) => setLessonType(e.target.value as 'youtube' | 'video' | 'text' | 'pdf')}
                     className="w-full px-3.5 py-2.5 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
-                  />
+                  >
+                    <option value="youtube">YouTube Video</option>
+                    <option value="video">Direct MP4 Video</option>
+                    <option value="text">Reading Article (Text)</option>
+                    <option value="pdf">Downloadable Resource (PDF / Link)</option>
+                  </select>
                 </div>
 
-                {videoUrl && (
-                  <div className="aspect-video w-full rounded-xl overflow-hidden bg-slate-950 border border-slate-800">
-                    <iframe
-                      src={getEmbedUrl(videoUrl)}
-                      title="Video Preview"
-                      allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                      allowFullScreen
-                      className="w-full h-full border-0"
+                {(lessonType === 'youtube' || lessonType === 'video') && (
+                  <>
+                    <div>
+                      <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                        YouTube Video URL or Direct MP4 Link
+                      </label>
+                      <input
+                        type="url"
+                        required
+                        value={videoUrl}
+                        onChange={(e) => setVideoUrl(e.target.value)}
+                        placeholder="https://www.youtube.com/watch?v=..."
+                        className="w-full px-3.5 py-2.5 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                      />
+                    </div>
+
+                    {videoUrl && (
+                      <div className="aspect-video w-full rounded-xl overflow-hidden bg-slate-950 border border-slate-800">
+                        <iframe
+                          src={getEmbedUrl(videoUrl)}
+                          title="Video Preview"
+                          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                          allowFullScreen
+                          className="w-full h-full border-0"
+                        />
+                      </div>
+                    )}
+                  </>
+                )}
+
+                {lessonType === 'text' && (
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                      Article Content
+                    </label>
+                    <textarea
+                      rows={5}
+                      required
+                      value={articleText}
+                      onChange={(e) => setArticleText(e.target.value)}
+                      placeholder="Write the lesson reading material..."
+                      className="w-full px-3.5 py-2.5 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
+                    />
+                  </div>
+                )}
+
+                {lessonType === 'pdf' && (
+                  <div>
+                    <label className="block text-xs font-medium text-slate-300 mb-1.5">
+                      PDF or Resource Download URL
+                    </label>
+                    <input
+                      type="url"
+                      required
+                      value={pdfUrl}
+                      onChange={(e) => setPdfUrl(e.target.value)}
+                      placeholder="https://media.brilliamind.id/resources/handbook.pdf"
+                      className="w-full px-3.5 py-2.5 bg-slate-900/60 border border-slate-700/80 rounded-xl text-slate-100 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/40"
                     />
                   </div>
                 )}
@@ -520,7 +702,7 @@ export default function CourseEditorPage() {
                 <div className="flex items-center justify-end gap-2 pt-3 border-t border-slate-800">
                   <button
                     type="button"
-                    onClick={() => setIsLessonModalOpen(false)}
+                    onClick={() => { setIsLessonModalOpen(false); setEditingLessonId(null) }}
                     className="px-4 py-2 rounded-xl text-xs text-slate-400 hover:text-slate-200"
                   >
                     Cancel
@@ -529,7 +711,7 @@ export default function CourseEditorPage() {
                     type="submit"
                     className="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white text-xs font-semibold shadow-md shadow-indigo-600/20"
                   >
-                    Save Lesson
+                    {editingLessonId ? 'Update Lesson' : 'Save Lesson'}
                   </button>
                 </div>
               </form>

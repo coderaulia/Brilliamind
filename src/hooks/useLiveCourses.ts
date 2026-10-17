@@ -39,6 +39,7 @@ export interface BackendLesson {
   contentJson?: Record<string, unknown> | null
   position: number
   isFreePreview?: boolean
+  completed?: boolean
 }
 
 export interface BackendSection {
@@ -57,7 +58,7 @@ function mapBackendCourseToFrontend(b: BackendCourse): Course {
     instructorAvatar: b.instructorAvatar || 'https://images.unsplash.com/photo-1573496359142-b8d87734a5a2?w=150',
     instructorRole: 'Course Author',
     rating: b.rating ?? 4.8,
-    students: b.students ?? 1250,
+    students: b.students ?? 0,
     lessons: b.lessons ?? 10,
     hours: b.hours ?? 3,
     category: b.category || 'General',
@@ -157,10 +158,13 @@ export function useLiveCourseDetail(courseId: string | number | null) {
             id: l.id,
             title: l.title,
             type: mapBackendTypeToFrontend(l.type),
-            duration: l.type === 'youtube' ? '15 min' : '10 min',
-            completed: false,
+            duration: l.type === 'youtube' || l.type === 'video' ? '15 min' : '10 min',
+            completed: Boolean(l.completed),
             videoUrl: l.videoUrl || undefined,
             articleContent: l.type === 'text' ? (l.contentJson?.text as string) : undefined,
+            resources: l.type === 'pdf' && l.pdfUrl
+              ? [{ title: l.title, size: 'PDF Resource', downloadUrl: l.pdfUrl }]
+              : undefined,
           })),
         }))
 

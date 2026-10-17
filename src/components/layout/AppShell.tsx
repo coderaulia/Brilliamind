@@ -34,7 +34,7 @@ export default function AppShell({
         transition: 'background 0.35s ease, color 0.35s ease',
       } as React.CSSProperties}
     >
-      <AppTopNav variant={variant} showStreak={showStreak} />
+      <AppTopNav variant={variant} showStreak={showStreak} onNav={onNav} />
       <div style={{ display: 'flex', flex: 1, overflow: 'hidden' }}>
         <AppSidebar active={activePage} onNav={onNav} variant={variant} />
         {children}

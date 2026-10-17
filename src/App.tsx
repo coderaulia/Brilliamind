@@ -8,6 +8,7 @@ import AppShell, { type PageId } from '@/components/layout/AppShell'
 import { useTheme } from '@/hooks/useTheme'
 import CourseDetailModal from '@/components/course/CourseDetailModal'
 import { useLiveCourses, useLiveCourseDetail } from '@/hooks/useLiveCourses'
+import { MOCK_DATA_ENABLED } from '@/lib/mock-mode'
 
 const OnboardingPage = lazy(() => import('@/pages/OnboardingPage'))
 const InstructorRegisterPage = lazy(() => import('@/pages/auth/InstructorRegisterPage'))
@@ -119,6 +120,15 @@ function LearnerApp() {
   )
 }
 
+function ProtectedLearnerRoute({ children }: { children: React.ReactNode }) {
+  const { user, isInitialized } = useAuthStore()
+  if (!isInitialized) return <div className="min-h-screen bg-[#0F172A]" />
+  if (!user && !MOCK_DATA_ENABLED) {
+    return <Navigate to="/login" replace />
+  }
+  return <>{children}</>
+}
+
 function ProtectedAdminRoute({ children }: { children: React.ReactNode }) {
   const { user, isInitialized } = useAuthStore()
   if (!isInitialized) return <div className="min-h-screen bg-[#0F172A]" />
@@ -176,8 +186,22 @@ export default function App() {
         <Route path="/reset-password" element={<ResetPasswordPage />} />
 
         {/* Learner Platform */}
-        <Route path="/dashboard" element={<LearnerApp />} />
-        <Route path="/learn/:courseId" element={<StandaloneCoursePlayer />} />
+        <Route
+          path="/dashboard"
+          element={
+            <ProtectedLearnerRoute>
+              <LearnerApp />
+            </ProtectedLearnerRoute>
+          }
+        />
+        <Route
+          path="/learn/:courseId"
+          element={
+            <ProtectedLearnerRoute>
+              <StandaloneCoursePlayer />
+            </ProtectedLearnerRoute>
+          }
+        />
         <Route path="/verify/:certUuid" element={<VerifyCertificatePage />} />
 
         {/* Instructor Studio Routes */}

@@ -66,14 +66,21 @@ coursesRouter.get('/', optionalAuthMiddleware, async (c) => {
   .orderBy(desc(courses.createdAt))
   .all()
 
-  // Get user enrollments if logged in
+  // Get enrollment counts and user enrollments
+  const allEnrollments = await db.select({
+    courseId: enrollments.courseId,
+    userId: enrollments.userId,
+  })
+  .from(enrollments)
+  .all()
+
+  const enrollmentCounts: Record<string, number> = {}
   const userEnrolledCourseIds = new Set<string>()
-  if (user) {
-    const userEnrollments = await db.select({ courseId: enrollments.courseId })
-      .from(enrollments)
-      .where(eq(enrollments.userId, user.id))
-      .all()
-    userEnrollments.forEach(e => userEnrolledCourseIds.add(e.courseId))
+  for (const e of allEnrollments) {
+    enrollmentCounts[e.courseId] = (enrollmentCounts[e.courseId] || 0) + 1
+    if (user && e.userId === user.id) {
+      userEnrolledCourseIds.add(e.courseId)
+    }
   }
 
   // Get lesson counts per course
@@ -86,15 +93,34 @@ coursesRouter.get('/', optionalAuthMiddleware, async (c) => {
   .all()
 
   const lessonCounts: Record<string, number> = {}
+  const lessonToCourse: Record<string, string> = {}
   courseSectionMap.forEach(row => {
     lessonCounts[row.courseId] = (lessonCounts[row.courseId] || 0) + 1
+    lessonToCourse[row.lessonId] = row.courseId
   })
+
+  // Get user completed lessons per course if logged in
+  const completedByCourse: Record<string, number> = {}
+  if (user) {
+    const doneRows = await db.select({ lessonId: userProgress.lessonId })
+      .from(userProgress)
+      .where(and(eq(userProgress.userId, user.id), eq(userProgress.completed, true)))
+      .all()
+    for (const r of doneRows) {
+      const cId = lessonToCourse[r.lessonId]
+      if (cId) {
+        completedByCourse[cId] = (completedByCourse[cId] || 0) + 1
+      }
+    }
+  }
 
   const enriched = allCourses.map((crs, idx) => {
     const totalLessons = lessonCounts[crs.id] || 0
     // Estimate hours: approx 15-20 min per lesson
     const hours = Math.max(1, Math.round((totalLessons * 15) / 60))
     const enrolled = userEnrolledCourseIds.has(crs.id)
+    const completed = enrolled ? (completedByCourse[crs.id] || 0) : 0
+    const progress = enrolled && totalLessons > 0 ? Math.round((completed / totalLessons) * 100) : 0
     const level: 'Beginner' | 'Intermediate' | 'Advanced' =
       crs.title.toLowerCase().includes('advanced') || crs.title.toLowerCase().includes('masterclass')
         ? 'Advanced'
@@ -109,10 +135,10 @@ coursesRouter.get('/', optionalAuthMiddleware, async (c) => {
       hours,
       level,
       enrolled,
-      progress: enrolled ? 10 : 0,
-      completed: enrolled ? Math.min(1, totalLessons) : 0,
+      progress,
+      completed,
       rating: 4.9,
-      students: 1200 + ((idx * 137) % 2500),
+      students: enrollmentCounts[crs.id] || 0,
     }
   })
 
@@ -136,6 +162,7 @@ coursesRouter.get('/instructor/my-courses', authMiddleware, requireRole('instruc
 // 3. Get Single Course with Sections & Lessons
 coursesRouter.get('/:id', optionalAuthMiddleware, async (c) => {
   const courseId = c.req.param('id') as string
+  const user = c.get('user')
   const db = getDb(c.env.DB)
 
   const course = await db.select({
@@ -163,6 +190,17 @@ coursesRouter.get('/:id', optionalAuthMiddleware, async (c) => {
     return c.json({ error: 'Course not found' }, 404)
   }
 
+  let isEnrolled = false
+  if (user) {
+    const existingEnrollment = await db.select({ id: enrollments.id })
+      .from(enrollments)
+      .where(and(eq(enrollments.userId, user.id), eq(enrollments.courseId, course.id)))
+      .get()
+    isEnrolled = Boolean(existingEnrollment)
+  }
+  const isOwnerOrAdmin = Boolean(user && (user.role === 'admin' || course.instructorId === user.id))
+  const hasFullAccess = isOwnerOrAdmin || isEnrolled
+
   const courseSections = await db.select().from(sections).where(eq(sections.courseId, course.id)).orderBy(sections.position).all()
   const sectionIds = courseSections.map(s => s.id)
 
@@ -171,13 +209,48 @@ coursesRouter.get('/:id', optionalAuthMiddleware, async (c) => {
     courseLessons = await db.select().from(lessons).where(sql`${lessons.sectionId} IN ${sectionIds}`).orderBy(lessons.position).all()
   }
 
+  const completedLessonIds = new Set<string>()
+  if (user && courseLessons.length > 0) {
+    const lessonIds = courseLessons.map(l => l.id)
+    const userProg = await db.select({ lessonId: userProgress.lessonId })
+      .from(userProgress)
+      .where(and(
+        eq(userProgress.userId, user.id),
+        eq(userProgress.completed, true),
+        sql`${userProgress.lessonId} IN ${lessonIds}`
+      ))
+      .all()
+    userProg.forEach(p => completedLessonIds.add(p.lessonId))
+  }
+
   const structuredSections = courseSections.map(sec => ({
     ...sec,
-    lessons: courseLessons.filter(l => l.sectionId === sec.id),
+    lessons: courseLessons
+      .filter(l => l.sectionId === sec.id)
+      .map(l => {
+        const canViewContent = hasFullAccess || Boolean(l.isFreePreview)
+        return {
+          ...l,
+          videoUrl: canViewContent ? l.videoUrl : null,
+          pdfUrl: canViewContent ? l.pdfUrl : null,
+          contentJson: canViewContent ? l.contentJson : null,
+          completed: completedLessonIds.has(l.id),
+        }
+      }),
   }))
 
+  const totalLessons = courseLessons.length
+  const completedCount = completedLessonIds.size
+  const progress = totalLessons > 0 ? Math.round((completedCount / totalLessons) * 100) : 0
+
   return c.json({
-    course,
+    course: {
+      ...course,
+      enrolled: isEnrolled,
+      lessons: totalLessons,
+      completed: completedCount,
+      progress,
+    },
     sections: structuredSections,
   })
 })
@@ -266,6 +339,22 @@ coursesRouter.put('/:id', authMiddleware, requireRole('instructor', 'admin'), zV
   return c.json({ message: 'Course updated successfully' })
 })
 
+// 5b. Instructor: Delete Course
+coursesRouter.delete('/:id', authMiddleware, requireRole('instructor', 'admin'), async (c) => {
+  const courseId = c.req.param('id') as string
+  const user = c.get('user')
+  const db = getDb(c.env.DB)
+
+  const course = await db.select().from(courses).where(eq(courses.id, courseId)).get()
+  if (!course) return c.json({ error: 'Course not found' }, 404)
+  if (user.role !== 'admin' && course.instructorId !== user.id) {
+    return c.json({ error: 'Forbidden: you do not own this course' }, 403)
+  }
+
+  await db.delete(courses).where(eq(courses.id, courseId))
+  return c.json({ message: 'Course deleted successfully' })
+})
+
 // 6. Instructor: Add Section
 coursesRouter.post('/:id/sections', authMiddleware, requireRole('instructor', 'admin'), zValidator('json', sectionSchema), async (c) => {
   const courseId = c.req.param('id') as string
@@ -282,6 +371,45 @@ coursesRouter.post('/:id/sections', authMiddleware, requireRole('instructor', 'a
   const id = generateUuid()
   await db.insert(sections).values({ id, courseId, title, position })
   return c.json({ id, title, position }, 201)
+})
+
+// 6b. Instructor: Update Section
+coursesRouter.put('/sections/:sectionId', authMiddleware, requireRole('instructor', 'admin'), zValidator('json', sectionSchema.partial()), async (c) => {
+  const sectionId = c.req.param('sectionId') as string
+  const data = c.req.valid('json')
+  const user = c.get('user')
+  const db = getDb(c.env.DB)
+
+  const section = await db.select().from(sections).where(eq(sections.id, sectionId)).get()
+  if (!section) return c.json({ error: 'Section not found' }, 404)
+
+  const course = await db.select().from(courses).where(eq(courses.id, section.courseId)).get()
+  if (!course) return c.json({ error: 'Course not found' }, 404)
+  if (user.role !== 'admin' && course.instructorId !== user.id) {
+    return c.json({ error: 'Forbidden' }, 403)
+  }
+
+  await db.update(sections).set(data).where(eq(sections.id, sectionId))
+  return c.json({ message: 'Section updated successfully' })
+})
+
+// 6c. Instructor: Delete Section
+coursesRouter.delete('/sections/:sectionId', authMiddleware, requireRole('instructor', 'admin'), async (c) => {
+  const sectionId = c.req.param('sectionId') as string
+  const user = c.get('user')
+  const db = getDb(c.env.DB)
+
+  const section = await db.select().from(sections).where(eq(sections.id, sectionId)).get()
+  if (!section) return c.json({ error: 'Section not found' }, 404)
+
+  const course = await db.select().from(courses).where(eq(courses.id, section.courseId)).get()
+  if (!course) return c.json({ error: 'Course not found' }, 404)
+  if (user.role !== 'admin' && course.instructorId !== user.id) {
+    return c.json({ error: 'Forbidden' }, 403)
+  }
+
+  await db.delete(sections).where(eq(sections.id, sectionId))
+  return c.json({ message: 'Section deleted successfully' })
 })
 
 // 7. Instructor: Add Lesson to Section (YouTube / Video)
@@ -489,7 +617,7 @@ function escapeCsvCell(val: string | number | null | undefined): string {
 }
 
 // 12. Export Course Roster as CSV (for HR & Instructors)
-coursesRouter.get('/:id/export-csv', authMiddleware, requireRole('instructor'), async (c) => {
+coursesRouter.get('/:id/export-csv', authMiddleware, requireRole('instructor', 'admin'), async (c) => {
   const courseId = c.req.param('id') as string
   const user = c.get('user')
   const db = getDb(c.env.DB)

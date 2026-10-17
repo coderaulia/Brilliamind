@@ -9,6 +9,7 @@ import {
 import type { ThemeVariant } from '@/constants/design-tokens'
 import type { ComponentType, SVGProps } from 'react'
 import { useLiveDashboard } from '@/hooks/useLiveDashboard'
+import { useAuthStore } from '@/stores/auth'
 
 type IconType = ComponentType<SVGProps<SVGSVGElement> & { s?: number }>
 
@@ -22,6 +23,8 @@ interface DashboardPageProps {
 
 export default function DashboardPage({ variant = 'Deep Navy', onOpenCourse, onNavToCourses }: DashboardPageProps) {
   const { enrolledCourses, stats, activities } = useLiveDashboard()
+  const { user } = useAuthStore()
+  const firstName = user?.name ? user.name.split(' ')[0] : 'Learner'
   const v = variant === 'Bright Canvas' ? 'B' : 'A'
   const heatScheme = v === 'A' ? 'teal' : 'blue'
 
@@ -48,7 +51,7 @@ export default function DashboardPage({ variant = 'Deep Navy', onOpenCourse, onN
                 {new Date().toLocaleDateString('en', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
               </div>
               <h1 style={{ fontSize: 28, fontWeight: 800, marginBottom: 8, lineHeight: 1.2 }}>
-                Welcome back, Aulia
+                Welcome back, {firstName}
               </h1>
               <p style={{ fontSize: 15, opacity: 0.75, fontWeight: 500, lineHeight: 1.5 }}>
                 You've completed {totalDone} of {totalLessons} lessons across {enrolledCourses.length} courses
@@ -81,7 +84,7 @@ export default function DashboardPage({ variant = 'Deep Navy', onOpenCourse, onN
                 {new Date().toLocaleDateString('en', { weekday: 'long', month: 'long', day: 'numeric' })}
               </p>
               <h1 style={{ fontSize: 26, fontWeight: 800, color: 'var(--text-primary)' }}>
-                Welcome back, Aulia
+                Welcome back, {firstName}
               </h1>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 16 }}>

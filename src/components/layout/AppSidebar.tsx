@@ -68,13 +68,13 @@ export default function AppSidebar({ active, onNav, variant }: AppSidebarProps) 
       <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '0 10px', marginBottom: 28 }}>
         <div style={{
           width: 34, height: 34, borderRadius: 10,
-          background: isDark ? 'linear-gradient(135deg, #3B5278, #2a3d5e)' : '#3B5278',
+          background: isDark ? 'linear-gradient(135deg, #0d9488, #3B5278)' : '#0d9488',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           color: '#fff', fontSize: 16, fontWeight: 800,
-        }}>V</div>
+        }}>B</div>
         <div>
           <div style={{ fontSize: 15, fontWeight: 800, color: isDark ? '#e2e8f0' : '#1e293b', lineHeight: 1.1 }}>
-            VanOS
+            BrilliaMind
           </div>
           <div style={{ fontSize: 10, fontWeight: 600, color: 'var(--sidebar-text)', letterSpacing: '0.06em', textTransform: 'uppercase' }}>
             Learning

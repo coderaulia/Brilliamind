@@ -289,4 +289,70 @@ auth.post('/reset-password', rateLimit(5, 60), zValidator('json', resetPasswordS
   return c.json({ message: 'Password has been reset successfully. You can now log in.' })
 })
 
+const updateProfileSchema = z.object({
+  name: z.string().min(2).max(100),
+  bio: z.string().max(1000).optional(),
+  avatarUrl: z.string().url().optional().or(z.literal('')),
+})
+
+const changePasswordSchema = z.object({
+  currentPassword: z.string().min(1),
+  newPassword: z.string().min(6).max(100),
+})
+
+// 7. Update Profile (/api/auth/profile)
+auth.put('/profile', authMiddleware, zValidator('json', updateProfileSchema), async (c) => {
+  const authUser = c.get('user')
+  const { name, bio, avatarUrl } = c.req.valid('json')
+  const db = getDb(c.env.DB)
+
+  await db.update(profiles)
+    .set({
+      name,
+      bio: bio !== undefined ? (bio || null) : undefined,
+      avatarUrl: avatarUrl !== undefined ? (avatarUrl || null) : undefined,
+    })
+    .where(eq(profiles.id, authUser.id))
+
+  const updated = await db.select().from(profiles).where(eq(profiles.id, authUser.id)).get()
+  if (!updated) {
+    return c.json({ error: 'User profile not found' }, 404)
+  }
+
+  return c.json({
+    message: 'Profile updated successfully',
+    user: {
+      id: updated.id,
+      email: updated.email,
+      name: updated.name,
+      role: updated.role,
+      status: updated.status,
+      avatarUrl: updated.avatarUrl,
+      bio: updated.bio,
+    },
+  })
+})
+
+// 8. Change Password (/api/auth/change-password)
+auth.post('/change-password', authMiddleware, rateLimit(5, 60), zValidator('json', changePasswordSchema), async (c) => {
+  const authUser = c.get('user')
+  const { currentPassword, newPassword } = c.req.valid('json')
+  const db = getDb(c.env.DB)
+
+  const user = await db.select().from(profiles).where(eq(profiles.id, authUser.id)).get()
+  if (!user || !user.passwordHash) {
+    return c.json({ error: 'User profile not found' }, 404)
+  }
+
+  const isValid = await verifyPassword(currentPassword, user.passwordHash)
+  if (!isValid) {
+    return c.json({ error: 'Current password is incorrect' }, 400)
+  }
+
+  const passwordHash = await hashPassword(newPassword)
+  await db.update(profiles).set({ passwordHash }).where(eq(profiles.id, authUser.id))
+
+  return c.json({ message: 'Password updated successfully' })
+})
+
 export default auth

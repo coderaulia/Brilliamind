@@ -37,9 +37,24 @@ export default function CoursePlayerPage({ courseId, onBack }: CoursePlayerPageP
       allLessons.forEach((item) => {
         if (item.lesson.completed) initial[item.lesson.id] = true
       })
-      setCompletedLessons(initial)
+      setCompletedLessons((prev) => ({ ...initial, ...prev }))
     }
   }, [allLessons, currentLessonId])
+
+  useEffect(() => {
+    if (!courseId) return
+    let active = true
+    api.get<{ progress: Record<string, boolean> }>(`/api/progress/course/${encodeURIComponent(String(courseId))}`)
+      .then((res) => {
+        if (active && res.progress) {
+          setCompletedLessons((prev) => ({ ...prev, ...res.progress }))
+        }
+      })
+      .catch(() => {
+        // ignore if guest or offline
+      })
+    return () => { active = false }
+  }, [courseId])
 
   const [sidebarOpen, setSidebarOpen] = useState(true)
 

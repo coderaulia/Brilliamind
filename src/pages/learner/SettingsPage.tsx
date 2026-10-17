@@ -1,9 +1,11 @@
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import type { ThemeVariant } from '@/constants/design-tokens'
 import {
   IconSettings, IconUser, IconCheck, IconBell, IconLock,
   IconGrid
 } from '@/components/ui/icons'
+import { useAuthStore, type UserProfile } from '@/stores/auth'
+import { api, ApiError } from '@/lib/api'
 
 interface SettingsPageProps {
   currentTheme: ThemeVariant
@@ -11,25 +13,106 @@ interface SettingsPageProps {
 }
 
 export default function SettingsPage({ currentTheme, onThemeChange }: SettingsPageProps) {
+  const { user, setUser } = useAuthStore()
   const [activeTab, setActiveTab] = useState<'profile' | 'appearance' | 'notifications' | 'security'>('profile')
-  
+
   // Profile form state
-  const [name, setName] = useState('Aulia Rahman')
-  const [headline, setHeadline] = useState('Aspiring Product Designer & Frontend Enthusiast')
-  const [bio, setBio] = useState('Passionate about crafting intuitive human-computer interfaces and building modern web apps.')
-  const [email, setEmail] = useState('aulia@example.com')
-  const [goal, setGoal] = useState('Career Transition to Senior Product Designer')
-  const [savedSuccess, setSavedSuccess] = useState(false)
+  const [name, setName] = useState(user?.name || 'Learner')
+  const [avatarUrl, setAvatarUrl] = useState(user?.avatarUrl || '')
+  const [headline, setHeadline] = useState(() => localStorage.getItem('bm_pref_headline') || 'Product & Engineering Learner')
+  const [bio, setBio] = useState(user?.bio || '')
+  const [email, setEmail] = useState(user?.email || '')
+  const [goal, setGoal] = useState(() => localStorage.getItem('bm_pref_goal') || 'Master modern cloud & product engineering')
+  const [savedMessage, setSavedMessage] = useState<string | null>(null)
+  const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [isSaving, setIsSaving] = useState(false)
+
+  // Security state
+  const [currentPassword, setCurrentPassword] = useState('')
+  const [newPassword, setNewPassword] = useState('')
 
   // Preferences state
-  const [language, setLanguage] = useState('English (US)')
-  const [emailDigest, setEmailDigest] = useState(true)
-  const [qnaAlerts, setQnaAlerts] = useState(true)
+  const [language, setLanguage] = useState(() => localStorage.getItem('bm_pref_lang') || 'English (US)')
+  const [emailDigest, setEmailDigest] = useState(() => localStorage.getItem('bm_pref_digest') !== 'false')
+  const [qnaAlerts, setQnaAlerts] = useState(() => localStorage.getItem('bm_pref_qna') !== 'false')
 
-  const handleSave = () => {
-    setSavedSuccess(true)
-    setTimeout(() => setSavedSuccess(false), 2500)
+  useEffect(() => {
+    if (user) {
+      setName(user.name)
+      setEmail(user.email)
+      setBio(user.bio || '')
+      setAvatarUrl(user.avatarUrl || '')
+    }
+  }, [user])
+
+  const showToast = (msg: string) => {
+    setErrorMessage(null)
+    setSavedMessage(msg)
+    setTimeout(() => setSavedMessage(null), 3000)
   }
+
+  const handleSaveProfile = async () => {
+    setErrorMessage(null)
+    localStorage.setItem('bm_pref_headline', headline)
+    localStorage.setItem('bm_pref_goal', goal)
+
+    if (!user) {
+      showToast('Profile preferences saved locally!')
+      return
+    }
+
+    setIsSaving(true)
+    try {
+      const res = await api.put<{ user: UserProfile; message: string }>('/api/auth/profile', {
+        name: name.trim(),
+        bio: bio.trim(),
+        avatarUrl: avatarUrl.trim(),
+      })
+      setUser(res.user)
+      showToast('Profile updated and saved!')
+    } catch (err) {
+      setErrorMessage(err instanceof ApiError ? err.message : 'Failed to update profile')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const handleSavePreferences = () => {
+    localStorage.setItem('bm_pref_lang', language)
+    localStorage.setItem('bm_pref_digest', String(emailDigest))
+    localStorage.setItem('bm_pref_qna', String(qnaAlerts))
+    showToast('Preferences updated and saved!')
+  }
+
+  const handleChangePassword = async () => {
+    setErrorMessage(null)
+    if (!currentPassword || newPassword.length < 6) {
+      setErrorMessage('Please enter your current password and a new password (min 6 characters).')
+      return
+    }
+    setIsSaving(true)
+    try {
+      await api.post('/api/auth/change-password', {
+        currentPassword,
+        newPassword,
+      })
+      setCurrentPassword('')
+      setNewPassword('')
+      showToast('Password updated successfully!')
+    } catch (err) {
+      setErrorMessage(err instanceof ApiError ? err.message : 'Failed to update password')
+    } finally {
+      setIsSaving(false)
+    }
+  }
+
+  const initials = (name || 'L')
+    .split(' ')
+    .map(p => p[0])
+    .filter(Boolean)
+    .slice(0, 2)
+    .join('')
+    .toUpperCase() || 'L'
 
   return (
     <div style={{ flex: 1, overflowY: 'auto', padding: 28, background: 'var(--page-bg)' }}>
@@ -69,7 +152,7 @@ export default function SettingsPage({ currentTheme, onThemeChange }: SettingsPa
             return (
               <button
                 key={tab.id}
-                onClick={() => setActiveTab(tab.id)}
+                onClick={() => { setActiveTab(tab.id); setErrorMessage(null) }}
                 style={{
                   display: 'flex', alignItems: 'center', gap: 8,
                   padding: '9px 18px', borderRadius: 10,
@@ -89,14 +172,25 @@ export default function SettingsPage({ currentTheme, onThemeChange }: SettingsPa
         </div>
 
         {/* Save Toast Notification */}
-        {savedSuccess && (
+        {savedMessage && (
           <div style={{
             padding: '12px 20px', borderRadius: 12,
             background: 'rgba(16,185,129,0.15)', border: '1px solid #10b981',
             color: '#059669', fontSize: 14, fontWeight: 700,
             display: 'flex', alignItems: 'center', gap: 8, marginBottom: 20
           }}>
-            <IconCheck s={18} /> Settings successfully updated and saved!
+            <IconCheck s={18} /> {savedMessage}
+          </div>
+        )}
+
+        {errorMessage && (
+          <div style={{
+            padding: '12px 20px', borderRadius: 12,
+            background: 'rgba(239,68,68,0.15)', border: '1px solid #ef4444',
+            color: '#ef4444', fontSize: 14, fontWeight: 700,
+            marginBottom: 20
+          }}>
+            {errorMessage}
           </div>
         )}
 
@@ -108,30 +202,40 @@ export default function SettingsPage({ currentTheme, onThemeChange }: SettingsPa
           }}>
             {/* Avatar Row */}
             <div style={{ display: 'flex', alignItems: 'center', gap: 20, marginBottom: 28, paddingBottom: 24, borderBottom: '1px solid var(--card-border)' }}>
-              <div style={{
-                width: 72, height: 72, borderRadius: 20,
-                background: 'linear-gradient(135deg, #14b8a6, #3b82f6)',
-                color: '#fff', fontSize: 24, fontWeight: 800,
-                display: 'flex', alignItems: 'center', justifyContent: 'center'
-              }}>
-                AR
-              </div>
-              <div>
+              {avatarUrl ? (
+                <img
+                  src={avatarUrl}
+                  alt={name}
+                  style={{ width: 72, height: 72, borderRadius: 20, objectFit: 'cover' }}
+                />
+              ) : (
+                <div style={{
+                  width: 72, height: 72, borderRadius: 20,
+                  background: 'linear-gradient(135deg, #14b8a6, #3b82f6)',
+                  color: '#fff', fontSize: 24, fontWeight: 800,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center'
+                }}>
+                  {initials}
+                </div>
+              )}
+              <div style={{ flex: 1 }}>
                 <h3 style={{ fontSize: 18, fontWeight: 800, color: 'var(--text-primary)', marginBottom: 4 }}>
                   {name}
                 </h3>
                 <div style={{ fontSize: 13, color: 'var(--text-muted)', marginBottom: 8 }}>
-                  Learner ID: #BM-8942-AUL
+                  Account ID: #{user?.id ? user.id.slice(0, 8).toUpperCase() : 'BM-LOCAL'}
                 </div>
-                <button
+                <input
+                  type="url"
+                  value={avatarUrl}
+                  onChange={e => setAvatarUrl(e.target.value)}
+                  placeholder="Avatar Image URL (https://...)"
                   style={{
-                    padding: '6px 14px', borderRadius: 8,
+                    width: '100%', maxWidth: 360, padding: '6px 12px', borderRadius: 8,
                     background: 'var(--page-bg)', border: '1px solid var(--card-border)',
-                    color: 'var(--text-primary)', fontSize: 12, fontWeight: 600, cursor: 'pointer'
+                    color: 'var(--text-primary)', fontSize: 12, outline: 'none', fontFamily: 'inherit'
                   }}
-                >
-                  Upload New Avatar
-                </button>
+                />
               </div>
             </div>
 
@@ -160,11 +264,11 @@ export default function SettingsPage({ currentTheme, onThemeChange }: SettingsPa
                 <input
                   type="email"
                   value={email}
-                  onChange={e => setEmail(e.target.value)}
+                  disabled
                   style={{
                     width: '100%', padding: '10px 14px', borderRadius: 10,
                     border: '1px solid var(--card-border)', background: 'var(--page-bg)',
-                    color: 'var(--text-primary)', fontSize: 14, outline: 'none', fontFamily: 'inherit'
+                    color: 'var(--text-muted)', fontSize: 14, outline: 'none', fontFamily: 'inherit', opacity: 0.75
                   }}
                 />
               </div>
@@ -219,16 +323,18 @@ export default function SettingsPage({ currentTheme, onThemeChange }: SettingsPa
             </div>
 
             <button
-              onClick={handleSave}
+              onClick={handleSaveProfile}
+              disabled={isSaving}
               style={{
                 padding: '11px 28px', borderRadius: 10,
                 background: 'linear-gradient(135deg, #14b8a6, #0d9488)',
                 color: '#fff', border: 'none', fontSize: 14, fontWeight: 700,
-                cursor: 'pointer', fontFamily: 'inherit',
-                boxShadow: '0 4px 12px rgba(20,184,166,0.3)'
+                cursor: isSaving ? 'wait' : 'pointer', fontFamily: 'inherit',
+                boxShadow: '0 4px 12px rgba(20,184,166,0.3)',
+                opacity: isSaving ? 0.7 : 1
               }}
             >
-              Save Profile Changes
+              {isSaving ? 'Saving...' : 'Save Profile Changes'}
             </button>
           </div>
         )}
@@ -254,7 +360,7 @@ export default function SettingsPage({ currentTheme, onThemeChange }: SettingsPa
                     key={th.name}
                     onClick={() => {
                       onThemeChange(th.name)
-                      handleSave()
+                      showToast('Theme updated!')
                     }}
                     style={{
                       padding: '20px 22px', borderRadius: 14,
@@ -288,7 +394,8 @@ export default function SettingsPage({ currentTheme, onThemeChange }: SettingsPa
                 value={language}
                 onChange={e => {
                   setLanguage(e.target.value)
-                  handleSave()
+                  localStorage.setItem('bm_pref_lang', e.target.value)
+                  showToast('Language updated!')
                 }}
                 style={{
                   width: '100%', padding: '10px 14px', borderRadius: 10,
@@ -358,7 +465,7 @@ export default function SettingsPage({ currentTheme, onThemeChange }: SettingsPa
             </div>
 
             <button
-              onClick={handleSave}
+              onClick={handleSavePreferences}
               style={{
                 padding: '11px 28px', borderRadius: 10,
                 background: 'linear-gradient(135deg, #14b8a6, #0d9488)',
@@ -388,6 +495,8 @@ export default function SettingsPage({ currentTheme, onThemeChange }: SettingsPa
                 </label>
                 <input
                   type="password"
+                  value={currentPassword}
+                  onChange={e => setCurrentPassword(e.target.value)}
                   placeholder="••••••••••••"
                   style={{
                     width: '100%', padding: '10px 14px', borderRadius: 10,
@@ -403,7 +512,9 @@ export default function SettingsPage({ currentTheme, onThemeChange }: SettingsPa
                 </label>
                 <input
                   type="password"
-                  placeholder="Minimum 8 characters"
+                  value={newPassword}
+                  onChange={e => setNewPassword(e.target.value)}
+                  placeholder="Minimum 6 characters"
                   style={{
                     width: '100%', padding: '10px 14px', borderRadius: 10,
                     border: '1px solid var(--card-border)', background: 'var(--page-bg)',
@@ -414,15 +525,17 @@ export default function SettingsPage({ currentTheme, onThemeChange }: SettingsPa
             </div>
 
             <button
-              onClick={handleSave}
+              onClick={handleChangePassword}
+              disabled={isSaving}
               style={{
                 padding: '11px 28px', borderRadius: 10,
                 background: 'linear-gradient(135deg, #14b8a6, #0d9488)',
                 color: '#fff', border: 'none', fontSize: 14, fontWeight: 700,
-                cursor: 'pointer', fontFamily: 'inherit'
+                cursor: isSaving ? 'wait' : 'pointer', fontFamily: 'inherit',
+                opacity: isSaving ? 0.7 : 1
               }}
             >
-              Update Password
+              {isSaving ? 'Updating...' : 'Update Password'}
             </button>
           </div>
         )}

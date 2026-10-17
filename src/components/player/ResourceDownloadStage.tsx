@@ -76,7 +76,11 @@ export default function ResourceDownloadStage({ title, resources }: ResourceDown
               </div>
 
               <button
-                onClick={() => alert(`Downloading ${res.title}...`)}
+                onClick={() => {
+                  if (res.downloadUrl && res.downloadUrl !== '#') {
+                    window.open(res.downloadUrl, '_blank', 'noopener,noreferrer')
+                  }
+                }}
                 style={{
                   display: 'flex',
                   alignItems: 'center',

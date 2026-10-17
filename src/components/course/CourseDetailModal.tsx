@@ -131,14 +131,22 @@ export default function CourseDetailModal({
             background: 'var(--card-bg)', border: '1px solid var(--card-border)',
             marginBottom: 24
           }}>
-            <div style={{
-              width: 46, height: 46, borderRadius: 12,
-              background: 'linear-gradient(135deg, #3b82f6, #0d9488)',
-              color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
-              fontWeight: 800, fontSize: 16
-            }}>
-              {course.instructorAvatar}
-            </div>
+            {course.instructorAvatar && (course.instructorAvatar.startsWith('http') || course.instructorAvatar.startsWith('/')) ? (
+              <img
+                src={course.instructorAvatar}
+                alt={course.instructor}
+                style={{ width: 46, height: 46, borderRadius: 12, objectFit: 'cover', flexShrink: 0 }}
+              />
+            ) : (
+              <div style={{
+                width: 46, height: 46, borderRadius: 12,
+                background: 'linear-gradient(135deg, #3b82f6, #0d9488)',
+                color: '#fff', display: 'flex', alignItems: 'center', justifyContent: 'center',
+                fontWeight: 800, fontSize: 16, flexShrink: 0,
+              }}>
+                {course.instructorAvatar || course.instructor.slice(0, 2).toUpperCase()}
+              </div>
+            )}
             <div>
               <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--text-muted)', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
                 Course Instructor
