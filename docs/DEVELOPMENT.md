@@ -2,7 +2,7 @@
 
 ## Prerequisites
 
-- Node.js 22+
+- Node.js >=24.22.1 (LTS) or >=22.23.4 (LTS) (patched against CVE-2026-111497 / Node2Shell)
 - pnpm (`npm i -g pnpm` or `corepack enable`)
 - Wrangler CLI (`pnpm dlx wrangler` or `npm i -g wrangler`)
 - Git
